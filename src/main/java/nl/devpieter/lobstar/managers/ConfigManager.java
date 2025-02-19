@@ -13,6 +13,9 @@ public class ConfigManager {
 
         config.put("socket_url", "http://127.0.0.1:5200/hub/plugin");
         config.put("whitelist_api_url", "http://localhost:5200/api/whitelist");
+
+        config.put("version", "1.0.0");
+        config.put("version_api_url", "http://localhost:5200/api/version");
     }
 
     public String getString(String key) {

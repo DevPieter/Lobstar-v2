@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-//public record Server(UUID id, String name, String displayName, int type, String ip, int port, boolean isWhitelistEnabled) {
 public class Server {
 
     private final UUID id;
