@@ -1,7 +1,7 @@
 package nl.devpieter.lobstar.socket.listeners.player;
 
 import com.microsoft.signalr.Action3;
-import nl.devpieter.lobstar.sees.events.player.KickAllPlayersEvent;
+import nl.devpieter.lobstar.socket.events.player.KickAllPlayersEvent;
 import nl.devpieter.lobstar.socket.listeners.ISocketListener;
 import nl.devpieter.sees.Sees;
 

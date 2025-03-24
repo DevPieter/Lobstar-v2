@@ -7,8 +7,8 @@ import net.kyori.adventure.text.Component;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.enums.ServerType;
 import nl.devpieter.lobstar.models.Server;
-import nl.devpieter.lobstar.sees.events.server.ServerUpdatedEvent;
-import nl.devpieter.lobstar.sees.events.server.SyncServersEvent;
+import nl.devpieter.lobstar.socket.events.server.ServerUpdatedEvent;
+import nl.devpieter.lobstar.socket.events.server.SyncServersEvent;
 import nl.devpieter.lobstar.utils.ServerUtils;
 import nl.devpieter.sees.Annotations.EventListener;
 import nl.devpieter.sees.Listener.Listener;
@@ -39,6 +39,10 @@ public class ServerManager implements Listener {
 
     public @Nullable Server getServer(String name) {
         return servers.stream().filter(server -> server.name().equals(name)).findFirst().orElse(null);
+    }
+
+    public @Nullable Server getServer(UUID serverId) {
+        return servers.stream().filter(server -> server.id().equals(serverId)).findFirst().orElse(null);
     }
 
     @EventListener

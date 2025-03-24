@@ -1,7 +1,7 @@
 package nl.devpieter.lobstar.socket.listeners.player;
 
 import com.microsoft.signalr.Action2;
-import nl.devpieter.lobstar.sees.events.player.MoveAllPlayersEvent;
+import nl.devpieter.lobstar.socket.events.player.MoveAllPlayersEvent;
 import nl.devpieter.lobstar.socket.listeners.ISocketListener;
 import nl.devpieter.sees.Sees;
 

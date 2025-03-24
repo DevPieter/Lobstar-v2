@@ -1,4 +1,4 @@
-package nl.devpieter.lobstar.listeners;
+package nl.devpieter.lobstar.listeners.velocity;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;

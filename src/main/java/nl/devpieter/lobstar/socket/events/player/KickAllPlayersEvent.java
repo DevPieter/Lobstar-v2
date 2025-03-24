@@ -1,4 +1,4 @@
-package nl.devpieter.lobstar.sees.events.player;
+package nl.devpieter.lobstar.socket.events.player;
 
 import nl.devpieter.sees.Event.Event;
 import org.jetbrains.annotations.Nullable;
