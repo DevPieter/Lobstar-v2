@@ -17,8 +17,12 @@ import nl.devpieter.lobstar.managers.VersionManager;
 import nl.devpieter.lobstar.managers.WhitelistManager;
 import nl.devpieter.lobstar.models.version.Version;
 import nl.devpieter.lobstar.socket.SocketManager;
-import nl.devpieter.lobstar.socket.listeners.ServerUpdatedListener;
-import nl.devpieter.lobstar.socket.listeners.SyncServersListener;
+import nl.devpieter.lobstar.socket.listeners.player.KickAllPlayersListener;
+import nl.devpieter.lobstar.socket.listeners.player.KickPlayerListener;
+import nl.devpieter.lobstar.socket.listeners.player.MoveAllPlayersListener;
+import nl.devpieter.lobstar.socket.listeners.player.MovePlayerListener;
+import nl.devpieter.lobstar.socket.listeners.server.ServerUpdatedListener;
+import nl.devpieter.lobstar.socket.listeners.server.SyncServersListener;
 import nl.devpieter.sees.Sees;
 import org.slf4j.Logger;
 
@@ -123,6 +127,11 @@ public class Lobstar {
 
         socketManager.addListener(new SyncServersListener());
         socketManager.addListener(new ServerUpdatedListener());
+
+        socketManager.addListener(new KickPlayerListener());
+        socketManager.addListener(new KickAllPlayersListener());
+        socketManager.addListener(new MovePlayerListener());
+        socketManager.addListener(new MoveAllPlayersListener());
 
         logger.info("Initializing server manager");
         serverManager = new ServerManager(this);

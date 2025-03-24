@@ -1,8 +1,9 @@
-package nl.devpieter.lobstar.socket.listeners;
+package nl.devpieter.lobstar.socket.listeners.server;
 
 import com.microsoft.signalr.Action1;
 import nl.devpieter.lobstar.models.Server;
-import nl.devpieter.lobstar.sees.events.SyncServersEvent;
+import nl.devpieter.lobstar.sees.events.server.SyncServersEvent;
+import nl.devpieter.lobstar.socket.listeners.ISocketListener;
 import nl.devpieter.sees.Sees;
 
 import java.lang.reflect.Type;

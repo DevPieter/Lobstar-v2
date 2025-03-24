@@ -1,4 +1,4 @@
-package nl.devpieter.lobstar.sees.events;
+package nl.devpieter.lobstar.sees.events.server;
 
 import nl.devpieter.lobstar.models.Server;
 import nl.devpieter.sees.Event.Event;
