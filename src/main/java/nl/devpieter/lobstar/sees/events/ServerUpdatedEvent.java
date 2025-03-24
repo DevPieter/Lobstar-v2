@@ -6,5 +6,5 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public record ServerUpdatedEvent(UUID serverId, @Nullable Server server, boolean kickPlayers) implements Event {
+public record ServerUpdatedEvent(UUID serverId, @Nullable Server server) implements Event {
 }

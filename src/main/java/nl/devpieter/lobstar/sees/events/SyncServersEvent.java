@@ -5,5 +5,5 @@ import nl.devpieter.sees.Event.Event;
 
 import java.util.List;
 
-public record SyncServersEvent(List<Server> servers, boolean kickPlayers) implements Event {
+public record SyncServersEvent(List<Server> servers) implements Event {
 }

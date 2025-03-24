@@ -1,6 +1,6 @@
 package nl.devpieter.lobstar.socket.listeners;
 
-import com.microsoft.signalr.Action3;
+import com.microsoft.signalr.Action2;
 import nl.devpieter.lobstar.models.Server;
 import nl.devpieter.lobstar.sees.events.ServerUpdatedEvent;
 import nl.devpieter.sees.Sees;
@@ -10,7 +10,7 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.UUID;
 
-public class ServerUpdatedListener implements ISocketListener<Action3<UUID, @Nullable Server, Boolean>> {
+public class ServerUpdatedListener implements ISocketListener<Action2<UUID, @Nullable Server>> {
 
     private final Sees sees = Sees.getInstance();
 
@@ -25,7 +25,7 @@ public class ServerUpdatedListener implements ISocketListener<Action3<UUID, @Nul
     }
 
     @Override
-    public Action3<UUID, @Nullable Server, Boolean> getAction() {
-        return (serverId, server, kickPlayers) -> sees.call(new ServerUpdatedEvent(serverId, server, kickPlayers));
+    public Action2<UUID, @Nullable Server> getAction() {
+        return (serverId, server) -> sees.call(new ServerUpdatedEvent(serverId, server));
     }
 }

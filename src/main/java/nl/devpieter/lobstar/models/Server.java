@@ -10,25 +10,31 @@ import java.util.UUID;
 public class Server {
 
     private final UUID id;
+    private final UUID ownerId;
 
     private final String name;
+    private @Nullable String prefix;
     private String displayName;
 
     private int type;
-
-    private final String ip;
-    private final int port;
-
     private boolean isWhitelistEnabled;
 
-    public Server(UUID id, String name, String displayName, int type, String ip, int port, boolean isWhitelistEnabled) {
+    private final String address;
+    private final int port;
+
+    public Server(UUID id, UUID ownerId, String name, @Nullable String prefix, String displayName, int type, boolean isWhitelistEnabled, String address, int port) {
         this.id = id;
+        this.ownerId = ownerId;
+
         this.name = name;
+        this.prefix = prefix;
         this.displayName = displayName;
+
         this.type = type;
-        this.ip = ip;
-        this.port = port;
         this.isWhitelistEnabled = isWhitelistEnabled;
+
+        this.address = address;
+        this.port = port;
     }
 
     public @Nullable RegisteredServer findRegisteredServer() {
@@ -39,8 +45,20 @@ public class Server {
         return id;
     }
 
+    public UUID ownerId() {
+        return ownerId;
+    }
+
     public String name() {
         return name;
+    }
+
+    public @Nullable String prefix() {
+        return prefix;
+    }
+
+    public void setPrefix(@Nullable String prefix) {
+        this.prefix = prefix;
     }
 
     public String displayName() {
@@ -55,20 +73,12 @@ public class Server {
         return type;
     }
 
-    public ServerType getType() {
-        return ServerType.fromInt(type);
-    }
-
     public void setType(int type) {
         this.type = type;
     }
 
-    public String ip() {
-        return ip;
-    }
-
-    public int port() {
-        return port;
+    public ServerType getType() {
+        return ServerType.fromInt(type);
     }
 
     public boolean isWhitelistEnabled() {
@@ -77,5 +87,13 @@ public class Server {
 
     public void setWhitelistEnabled(boolean whitelistEnabled) {
         isWhitelistEnabled = whitelistEnabled;
+    }
+
+    public String address() {
+        return address;
+    }
+
+    public int port() {
+        return port;
     }
 }

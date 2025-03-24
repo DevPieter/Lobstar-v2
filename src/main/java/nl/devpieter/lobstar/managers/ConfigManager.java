@@ -9,10 +9,10 @@ public class ConfigManager {
     private final HashMap<String, String> config = new HashMap<>();
 
     private ConfigManager() {
-        config.put("api_key", "my-super-secret-api-key");
+        config.put("api_key", "my-secret-api-key");
 
         config.put("socket_url", "http://127.0.0.1:5200/hub/plugin");
-        config.put("whitelist_api_url", "http://localhost:5200/api/whitelist");
+        config.put("api_url", "http://localhost:5200/api");
 
         config.put("version", "1.0.0");
         config.put("version_api_url", "http://localhost:5200/api/version");

@@ -44,7 +44,6 @@ public class ServerManager implements Listener {
     @EventListener
     public void onSyncServers(SyncServersEvent event) {
         logger.info("[SyncServersEvent] Syncing servers");
-        if (event.kickPlayers()) ServerUtils.kickAllPlayers(Component.text("Syncing servers, please reconnect in a few seconds."));
 
         // Unregister all servers
         logger.info("[SyncServersEvent] Unregistering all servers");
@@ -70,29 +69,29 @@ public class ServerManager implements Listener {
             logger.info("[ServerUpdatedEvent] Updating server: {}", server.name());
 
             boolean criticalChange = !existingServer.name().equals(server.name()) ||
-                    !existingServer.ip().equals(server.ip()) ||
+                    !existingServer.address().equals(server.address()) ||
                     existingServer.port() != server.port();
-
-            if (event.kickPlayers() || criticalChange) ServerUtils.kickAllPlayers(existingServer, Component.text("Server is restarting."));
 
             if (criticalChange) {
                 logger.info("[ServerUpdatedEvent] Critical change detected, re-registering server");
+
+                ServerUtils.kickAllPlayers(existingServer, Component.text("Server is restarting."));
                 unregisterServer(existingServer);
                 registerServer(server);
             } else {
+                logger.info("[ServerUpdatedEvent] Non-critical change detected, updating server");
                 updateServer(event.serverId(), server);
             }
-
         } else if (existingServer != null) {
             logger.info("[ServerUpdatedEvent] Removing server: {}", existingServer.name());
-            if (event.kickPlayers()) ServerUtils.kickAllPlayers(existingServer, Component.text("Server is being removed."));
 
+            ServerUtils.kickAllPlayers(existingServer, Component.text("Server is restarting."));
             unregisterServer(existingServer);
         }
     }
 
     private void registerServer(@NotNull Server server) {
-        InetSocketAddress address = new InetSocketAddress(server.ip(), server.port());
+        InetSocketAddress address = new InetSocketAddress(server.address(), server.port());
         ServerInfo serverInfo = new ServerInfo(server.name(), address);
 
         proxy.registerServer(serverInfo);
@@ -103,11 +102,9 @@ public class ServerManager implements Listener {
         Server existingServer = servers.stream().filter(s -> s.id().equals(serverId)).findFirst().orElse(null);
         if (existingServer == null) return;
 
-        logger.info("DN : {} - {}", existingServer.displayName(), server.displayName());
-        logger.info("TP : {} - {}", existingServer.type(), server.type());
-        logger.info("WL : {} - {}", existingServer.isWhitelistEnabled(), server.isWhitelistEnabled());
-
+        existingServer.setPrefix(server.prefix());
         existingServer.setDisplayName(server.displayName());
+
         existingServer.setType(server.type());
         existingServer.setWhitelistEnabled(server.isWhitelistEnabled());
     }

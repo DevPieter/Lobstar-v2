@@ -1,6 +1,6 @@
 package nl.devpieter.lobstar.socket.listeners;
 
-import com.microsoft.signalr.Action2;
+import com.microsoft.signalr.Action1;
 import nl.devpieter.lobstar.models.Server;
 import nl.devpieter.lobstar.sees.events.SyncServersEvent;
 import nl.devpieter.sees.Sees;
@@ -8,7 +8,7 @@ import nl.devpieter.sees.Sees;
 import java.lang.reflect.Type;
 import java.util.List;
 
-public class SyncServersListener implements ISocketListener<Action2<Server[], Boolean>> {
+public class SyncServersListener implements ISocketListener<Action1<Server[]>> {
 
     private final Sees sees = Sees.getInstance();
 
@@ -19,11 +19,11 @@ public class SyncServersListener implements ISocketListener<Action2<Server[], Bo
 
     @Override
     public List<Type> getTypes() {
-        return List.of(Server[].class, Boolean.class);
+        return List.of(Server[].class);
     }
 
     @Override
-    public Action2<Server[], Boolean> getAction() {
-        return (servers, kickPlayers) -> sees.call(new SyncServersEvent(List.of(servers), kickPlayers));
+    public Action1<Server[]> getAction() {
+        return (servers) -> sees.call(new SyncServersEvent(List.of(servers)));
     }
 }

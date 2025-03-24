@@ -103,4 +103,8 @@ public class SocketManager implements Listener {
     public boolean isConnected() {
         return hubConnection != null && hubConnection.getConnectionState() == HubConnectionState.CONNECTED;
     }
+
+    public void send(String method, Object... args) {
+        this.hubConnection.send(method, args);
+    }
 }

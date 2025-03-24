@@ -11,6 +11,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import nl.devpieter.lobstar.api.request.AsyncRequest;
 import nl.devpieter.lobstar.commands.LobbyCommand;
 import nl.devpieter.lobstar.listeners.ConnectionListener;
+import nl.devpieter.lobstar.listeners.WhitelistListener;
 import nl.devpieter.lobstar.managers.ServerManager;
 import nl.devpieter.lobstar.managers.VersionManager;
 import nl.devpieter.lobstar.managers.WhitelistManager;
@@ -134,6 +135,7 @@ public class Lobstar {
         logger.info("Registering listeners");
         EventManager eventManager = proxy.getEventManager();
         eventManager.register(this, new ConnectionListener());
+        eventManager.register(this, new WhitelistListener());
 
         logger.info("Registering commands");
         CommandManager commandManager = proxy.getCommandManager();
