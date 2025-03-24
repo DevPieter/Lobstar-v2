@@ -7,7 +7,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.managers.ServerManager;
-import nl.devpieter.lobstar.models.Server;
+import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.socket.events.player.KickAllPlayersEvent;
 import nl.devpieter.lobstar.socket.events.player.KickPlayerEvent;
 import nl.devpieter.lobstar.socket.events.player.MoveAllPlayersEvent;

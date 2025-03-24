@@ -1,4 +1,4 @@
-package nl.devpieter.lobstar.models;
+package nl.devpieter.lobstar.models.server;
 
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import nl.devpieter.lobstar.Lobstar;

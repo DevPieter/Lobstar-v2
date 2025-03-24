@@ -3,14 +3,15 @@ package nl.devpieter.lobstar.listeners.velocity;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.LoginEvent;
-import com.velocitypowered.api.event.player.ServerConnectedEvent;
+import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.proxy.Player;
+import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.managers.ServerManager;
-import nl.devpieter.lobstar.models.Server;
 import nl.devpieter.lobstar.models.player.CreatePlayer;
 import nl.devpieter.lobstar.models.player.PlayerStatus;
+import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.socket.SocketManager;
 
 public class ConnectionListener {
@@ -29,19 +30,34 @@ public class ConnectionListener {
     }
 
     @Subscribe
-    public void onServerConnected(ServerConnectedEvent event) {
+    public void onServerConnected(ServerPostConnectEvent event) {
         Player player = event.getPlayer();
-        RegisteredServer server = event.getServer();
+        ServerConnection current = player.getCurrentServer().orElse(null);
+        if (current == null) return;
 
-        Server currentServer = serverManager.getServer(server.getServerInfo().getName());
+        Server currentServer = serverManager.getServer(current);
         if (currentServer == null) return;
+        serverManager.setRemoteServerStatus(currentServer);
 
         PlayerStatus playerStatus = new PlayerStatus(player.getUsername(), true, currentServer.id());
         socketManager.send("SetPlayerStatus", player.getUniqueId(), playerStatus);
+
+        RegisteredServer previous = event.getPreviousServer();
+        if (previous == null) return;
+
+        Server previousServer = serverManager.getServer(previous);
+        if (previousServer != null) serverManager.setRemoteServerStatus(previousServer);
     }
 
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
-        socketManager.send("SetPlayerStatus", event.getPlayer().getUniqueId(), null);
+        Player player = event.getPlayer();
+        socketManager.send("SetPlayerStatus", player.getUniqueId(), null);
+
+        ServerConnection current = player.getCurrentServer().orElse(null);
+        if (current == null) return;
+
+        Server currentServer = serverManager.getServer(current);
+        if (currentServer != null) serverManager.setRemoteServerStatus(currentServer);
     }
 }

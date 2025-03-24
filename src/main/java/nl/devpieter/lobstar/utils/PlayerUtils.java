@@ -7,7 +7,7 @@ import net.kyori.adventure.text.format.TextColor;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.enums.ServerType;
 import nl.devpieter.lobstar.managers.ServerManager;
-import nl.devpieter.lobstar.models.Server;
+import nl.devpieter.lobstar.models.server.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

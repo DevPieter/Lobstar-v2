@@ -14,7 +14,7 @@ import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.enums.ServerType;
 import nl.devpieter.lobstar.managers.ServerManager;
 import nl.devpieter.lobstar.managers.WhitelistManager;
-import nl.devpieter.lobstar.models.Server;
+import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.models.whitelist.WhitelistEntry;
 import nl.devpieter.lobstar.utils.PlayerUtils;
 import nl.devpieter.lobstar.utils.ServerUtils;
