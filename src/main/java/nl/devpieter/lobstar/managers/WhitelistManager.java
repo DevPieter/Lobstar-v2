@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 public class WhitelistManager implements Listener {
 
     private final ConfigManager configManager = ConfigManager.getInstance();
-    private final String apiUrl = configManager.getString("api_url");
+    private final String apiUrl = configManager.getString("api_base_url") + "/api";
 
     public CompletableFuture<@Nullable WhitelistEntry> getWhitelistEntry(UUID playerId) {
         URI uri = URI.create(String.format("%s/player/%s/whitelist", apiUrl, playerId));

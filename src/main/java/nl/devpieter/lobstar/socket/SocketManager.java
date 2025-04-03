@@ -41,7 +41,7 @@ public class SocketManager implements Listener {
         if (isConnected()) return Completable.complete();
         if (isConnecting()) return Completable.error(new IllegalStateException("Already connecting"));
 
-        HttpHubConnectionBuilder builder = HubConnectionBuilder.create(configManager.getString("socket_url"));
+        HttpHubConnectionBuilder builder = HubConnectionBuilder.create(configManager.getString("api_base_url") + "/hub/plugin");
         builder.withHeader("X-API-KEY", configManager.getString("api_key"));
 
         hubConnection = builder.build();
