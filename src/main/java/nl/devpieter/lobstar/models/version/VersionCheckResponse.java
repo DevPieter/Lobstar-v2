@@ -2,7 +2,7 @@ package nl.devpieter.lobstar.models.version;
 
 public record VersionCheckResponse(
         Version api,
-        Version plugin,
+        Version requester,
         boolean compatible
 ) {
 }
