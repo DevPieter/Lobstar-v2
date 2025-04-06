@@ -3,10 +3,12 @@ package nl.devpieter.lobstar.utils;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.PingOptions;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import com.velocitypowered.api.proxy.server.ServerPing;
 import net.kyori.adventure.text.Component;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.models.server.Server;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 
@@ -30,17 +32,19 @@ public class ServerUtils {
     }
 
     public static boolean isOnline(RegisteredServer server, Duration timeout) {
-        try {
-            var options = PingOptions.builder().timeout(timeout).build();
-            server.ping(options).join();
-
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return getServerPing(server, timeout) != null;
     }
 
-    public static int getPlayerCount(RegisteredServer server) {
+    public static int getPlayerCount(@NotNull RegisteredServer server) {
         return server.getPlayersConnected().size();
+    }
+
+    public static @Nullable ServerPing getServerPing(RegisteredServer server, Duration timeout) {
+        try {
+            PingOptions options = PingOptions.builder().timeout(timeout).build();
+            return server.ping(options).join();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

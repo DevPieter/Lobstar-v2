@@ -3,6 +3,7 @@ package nl.devpieter.lobstar.models.server;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.enums.ServerType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
@@ -39,6 +40,12 @@ public class Server {
 
     public @Nullable RegisteredServer findRegisteredServer() {
         return Lobstar.getInstance().getProxy().getServer(name()).orElse(null);
+    }
+
+    public boolean isCriticallyDifferent(@NotNull Server server) {
+        return !server.name().equals(this.name) ||
+                !server.address().equals(this.address) ||
+                server.port() != this.port;
     }
 
     public UUID id() {

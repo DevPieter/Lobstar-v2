@@ -14,6 +14,7 @@ import nl.devpieter.lobstar.listeners.sees.TestListener;
 import nl.devpieter.lobstar.listeners.velocity.ConnectionListener;
 import nl.devpieter.lobstar.listeners.velocity.WhitelistListener;
 import nl.devpieter.lobstar.managers.ServerManager;
+import nl.devpieter.lobstar.managers.StatusManager;
 import nl.devpieter.lobstar.managers.VersionManager;
 import nl.devpieter.lobstar.managers.WhitelistManager;
 import nl.devpieter.lobstar.models.version.Version;
@@ -22,6 +23,8 @@ import nl.devpieter.lobstar.socket.listeners.player.KickAllPlayersListener;
 import nl.devpieter.lobstar.socket.listeners.player.KickPlayerListener;
 import nl.devpieter.lobstar.socket.listeners.player.MoveAllPlayersListener;
 import nl.devpieter.lobstar.socket.listeners.player.MovePlayerListener;
+import nl.devpieter.lobstar.socket.listeners.server.ServerCreatedListener;
+import nl.devpieter.lobstar.socket.listeners.server.ServerDeletedListener;
 import nl.devpieter.lobstar.socket.listeners.server.ServerUpdatedListener;
 import nl.devpieter.lobstar.socket.listeners.server.SyncServersListener;
 import nl.devpieter.sees.Sees;
@@ -39,6 +42,7 @@ public class Lobstar {
     private ProxyServer proxy;
 
     private SocketManager socketManager;
+    private StatusManager statusManager;
     private VersionManager versionManager;
     private ServerManager serverManager;
     private WhitelistManager whitelistManager;
@@ -111,6 +115,10 @@ public class Lobstar {
         return this.socketManager;
     }
 
+    public StatusManager getStatusManager() {
+        return this.statusManager;
+    }
+
     public ServerManager getServerManager() {
         return this.serverManager;
     }
@@ -127,12 +135,17 @@ public class Lobstar {
         sees.subscribe(this.socketManager);
 
         this.socketManager.addListener(new SyncServersListener());
+        this.socketManager.addListener(new ServerCreatedListener());
         this.socketManager.addListener(new ServerUpdatedListener());
+        this.socketManager.addListener(new ServerDeletedListener());
 
         this.socketManager.addListener(new KickPlayerListener());
         this.socketManager.addListener(new KickAllPlayersListener());
         this.socketManager.addListener(new MovePlayerListener());
         this.socketManager.addListener(new MoveAllPlayersListener());
+
+        this.logger.info("Initializing status manager");
+        this.statusManager = new StatusManager(this);
 
         this.logger.info("Initializing server manager");
         this.serverManager = new ServerManager(this);
@@ -159,6 +172,9 @@ public class Lobstar {
     }
 
     private void shutdown() {
+        this.logger.info("Cancelling sync task");
+        this.statusManager.cancelSyncTask();
+
         this.logger.info("Unsubscribing from Sees");
         Sees sees = Sees.getInstance();
         sees.unsubscribe(this.socketManager);

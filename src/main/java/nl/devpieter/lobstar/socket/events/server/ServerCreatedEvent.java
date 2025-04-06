@@ -5,5 +5,5 @@ import nl.devpieter.sees.Event.Event;
 
 import java.util.UUID;
 
-public record ServerUpdatedEvent(UUID serverId, Server server) implements Event {
+public record ServerCreatedEvent(UUID serverId, Server server) implements Event {
 }
