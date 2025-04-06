@@ -1,4 +1,4 @@
-package nl.devpieter.lobstar.listeners;
+package nl.devpieter.lobstar.listeners.velocity;
 
 import com.velocitypowered.api.event.ResultedEvent;
 import com.velocitypowered.api.event.Subscribe;
@@ -14,9 +14,8 @@ import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.enums.ServerType;
 import nl.devpieter.lobstar.managers.ServerManager;
 import nl.devpieter.lobstar.managers.WhitelistManager;
-import nl.devpieter.lobstar.models.GlobalWhitelistEntry;
-import nl.devpieter.lobstar.models.Server;
-import nl.devpieter.lobstar.models.ServerWhitelistEntry;
+import nl.devpieter.lobstar.models.server.Server;
+import nl.devpieter.lobstar.models.whitelist.WhitelistEntry;
 import nl.devpieter.lobstar.utils.PlayerUtils;
 import nl.devpieter.lobstar.utils.ServerUtils;
 import org.jetbrains.annotations.NotNull;
@@ -25,11 +24,11 @@ import org.slf4j.Logger;
 
 import java.util.List;
 
-public class ConnectionListener {
+public class WhitelistListener {
 
     private final Component denied = Component.text("You are not whitelisted on this server!").color(TextColor.color(0xfe3f3f));
-    private final Component banned = Component.text("You are banned from this server!").color(TextColor.color(0xfe3f3f));
-    private final Component pending = Component.text("Your whitelist request is pending. Please check back later.").color(TextColor.color(0xfe3f3f));
+//    private final Component banned = Component.text("You are banned from this server!").color(TextColor.color(0xfe3f3f));
+//    private final Component pending = Component.text("Your whitelist request is pending. Please check back later.").color(TextColor.color(0xfe3f3f));
 
     private final Component error = Component.text("An error occurred while checking if you can join this server!").color(TextColor.color(0xfe3f3f));
     private final Component noLobby = Component.text("No lobby servers available to redirect you to.").color(TextColor.color(0xfe3f3f));
@@ -46,24 +45,14 @@ public class ConnectionListener {
         logger.info("<Global> Checking whitelist status for {}", player.getUsername());
 
         try {
-            GlobalWhitelistEntry entry = whitelistManager.getGlobalWhitelistEntry(player.getUniqueId()).join();
+            WhitelistEntry entry = whitelistManager.getWhitelistEntry(player.getUniqueId()).join();
             if (entry == null) {
-                logger.error("<Global> Failed to get whitelist entry for {}", player.getUsername());
-                event.setResult(ResultedEvent.ComponentResult.denied(error));
+                logger.info("<Global> {} tried to join but no whitelist entry found", player.getUsername());
+                event.setResult(ResultedEvent.ComponentResult.denied(denied));
                 return;
             }
 
-            if (entry.isBanned()) {
-                logger.info("<Global> {} tried to join but is banned", player.getUsername());
-                event.setResult(ResultedEvent.ComponentResult.denied(banned));
-                return;
-            }
-
-            if (entry.isPendingReview()) {
-                logger.info("<Global> {} tried to join but is pending", player.getUsername());
-                event.setResult(ResultedEvent.ComponentResult.denied(pending));
-                return;
-            }
+            // TODO - Check ban status
 
             if (!entry.isWhitelisted()) {
                 logger.info("<Global> {} tried to join but is not whitelisted", player.getUsername());
@@ -97,6 +86,7 @@ public class ConnectionListener {
         Server server = serverManager.getServer(name);
         if (server == null) {
             logger.error("Server {} not found", name);
+
             PlayerUtils.sendErrorMessage(player, "Server not found, please try again later!");
             event.setResult(ServerPreConnectEvent.ServerResult.denied());
             return;
@@ -108,6 +98,7 @@ public class ConnectionListener {
         RegisteredServer registeredServer = server.findRegisteredServer();
         if (registeredServer == null) {
             logger.error("Server {} not registered", name);
+
             PlayerUtils.sendErrorMessage(player, "Server not registered, please try again later!");
             event.setResult(ServerPreConnectEvent.ServerResult.denied());
             return;
@@ -115,6 +106,7 @@ public class ConnectionListener {
 
         if (!ServerUtils.isOnline(registeredServer)) {
             logger.warn("Server {} not online", name);
+
             PlayerUtils.sendErrorMessage(player, "Server seems to be offline, please try again later!");
             event.setResult(ServerPreConnectEvent.ServerResult.denied());
             return;
@@ -127,40 +119,32 @@ public class ConnectionListener {
         }
 
         try {
-            ServerWhitelistEntry entry = whitelistManager.getServerWhitelistEntry(server.id(), player.getUniqueId()).join();
+            WhitelistEntry entry = whitelistManager.getWhitelistEntry(server.id(), player.getUniqueId()).join();
             if (entry == null) {
-                logger.error("<Server> Failed to get server whitelist entry for {} on {}", player.getUsername(), server.name());
+                logger.info("<Server> {} tried to join {} but no whitelist entry found", player.getUsername(), server.name());
+
                 player.sendMessage(error);
                 event.setResult(ServerPreConnectEvent.ServerResult.denied());
                 return;
             }
 
-            if (entry.isBanned()) {
-                logger.info("<Server> {} tried to join {} but is banned", player.getUsername(), server.name());
-                player.sendMessage(banned);
-                event.setResult(ServerPreConnectEvent.ServerResult.denied());
-                return;
-            }
-
-            if (entry.isPendingReview()) {
-                logger.info("<Server> {} tried to join {} but is pending", player.getUsername(), server.name());
-                player.sendMessage(pending);
-                event.setResult(ServerPreConnectEvent.ServerResult.denied());
-                return;
-            }
+            // TODO - Check ban status
 
             if (!entry.isWhitelisted()) {
                 logger.info("<Server> {} tried to join {} but is not whitelisted", player.getUsername(), server.name());
+
                 player.sendMessage(denied);
                 event.setResult(ServerPreConnectEvent.ServerResult.denied());
                 return;
             }
 
             logger.info("<Server> Allowing {} to join {}", player.getUsername(), server.name());
+
             PlayerUtils.sendWhisperMessage(player, String.format("Sending you to %s...", server.displayName()));
             event.setResult(ServerPreConnectEvent.ServerResult.allowed(registeredServer));
         } catch (Exception e) {
             logger.error("<Server> An error occurred while checking whitelist status for {} on {}", player.getUsername(), server.name(), e);
+
             player.sendMessage(error);
             event.setResult(ServerPreConnectEvent.ServerResult.denied());
         }
@@ -195,13 +179,14 @@ public class ConnectionListener {
             if (registeredServer == null || !ServerUtils.isOnline(registeredServer)) continue;
 
             try {
-                ServerWhitelistEntry entry = whitelistManager.getServerWhitelistEntry(server.id(), player.getUniqueId()).join();
+                WhitelistEntry entry = whitelistManager.getWhitelistEntry(server.id(), player.getUniqueId()).join();
                 if (entry == null) {
-                    logger.error("Failed to get server whitelist entry for {} on {}", player.getUsername(), server.name());
+                    logger.info("No whitelist entry found for {} on {}", player.getUsername(), server.name());
                     continue;
                 }
 
-                if (entry.isBanned() || entry.isPendingReview()) continue;
+                // TODO - Check ban status
+
                 if (entry.isWhitelisted()) return registeredServer;
             } catch (Exception e) {
                 logger.error("An error occurred while checking whitelist status for {} on {}", player.getUsername(), server.name(), e);

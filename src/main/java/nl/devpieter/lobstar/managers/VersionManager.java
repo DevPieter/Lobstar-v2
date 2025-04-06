@@ -14,7 +14,7 @@ public class VersionManager {
 
     private final ConfigManager configManager = ConfigManager.getInstance();
     private final String version = configManager.getString("version");
-    private final String versionApiUrl = configManager.getString("version_api_url");
+    private final String versionApiUrl = configManager.getString("api_base_url") + "/api/version";
 
     private boolean successfullyLoaded;
 
@@ -31,7 +31,7 @@ public class VersionManager {
             }
 
             this.apiVersion = response.api();
-            this.pluginVersion = response.plugin();
+            this.pluginVersion = response.requester();
             this.compatible = response.compatible();
 
             this.successfullyLoaded = true;

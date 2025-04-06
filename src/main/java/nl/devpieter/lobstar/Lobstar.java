@@ -10,14 +10,23 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.ProxyServer;
 import nl.devpieter.lobstar.api.request.AsyncRequest;
 import nl.devpieter.lobstar.commands.LobbyCommand;
-import nl.devpieter.lobstar.listeners.ConnectionListener;
+import nl.devpieter.lobstar.listeners.sees.TestListener;
+import nl.devpieter.lobstar.listeners.velocity.ConnectionListener;
+import nl.devpieter.lobstar.listeners.velocity.WhitelistListener;
 import nl.devpieter.lobstar.managers.ServerManager;
+import nl.devpieter.lobstar.managers.StatusManager;
 import nl.devpieter.lobstar.managers.VersionManager;
 import nl.devpieter.lobstar.managers.WhitelistManager;
 import nl.devpieter.lobstar.models.version.Version;
 import nl.devpieter.lobstar.socket.SocketManager;
-import nl.devpieter.lobstar.socket.listeners.ServerUpdatedListener;
-import nl.devpieter.lobstar.socket.listeners.SyncServersListener;
+import nl.devpieter.lobstar.socket.listeners.player.KickAllPlayersListener;
+import nl.devpieter.lobstar.socket.listeners.player.KickPlayerListener;
+import nl.devpieter.lobstar.socket.listeners.player.MoveAllPlayersListener;
+import nl.devpieter.lobstar.socket.listeners.player.MovePlayerListener;
+import nl.devpieter.lobstar.socket.listeners.server.ServerCreatedListener;
+import nl.devpieter.lobstar.socket.listeners.server.ServerDeletedListener;
+import nl.devpieter.lobstar.socket.listeners.server.ServerUpdatedListener;
+import nl.devpieter.lobstar.socket.listeners.server.SyncServersListener;
 import nl.devpieter.sees.Sees;
 import org.slf4j.Logger;
 
@@ -33,6 +42,7 @@ public class Lobstar {
     private ProxyServer proxy;
 
     private SocketManager socketManager;
+    private StatusManager statusManager;
     private VersionManager versionManager;
     private ServerManager serverManager;
     private WhitelistManager whitelistManager;
@@ -41,10 +51,10 @@ public class Lobstar {
     public void onProxyInitialization(ProxyInitializeEvent event) {
         instance = this;
 
-        logger.info("Initializing version manager");
-        versionManager = new VersionManager();
+        this.logger.info("Initializing version manager");
+        this.versionManager = new VersionManager();
 
-        logger.info("Loading version info, and checking compatibility. Please wait...");
+        this.logger.info("Loading version info, and checking compatibility. Please wait...");
         this.versionManager.loadVersionInfo(unused -> {
             if (!this.versionManager.isSuccessfullyLoaded()) {
                 this.logger.error("Failed to load version info, cannot continue");
@@ -62,15 +72,15 @@ public class Lobstar {
                 return;
             }
 
-            this.logger.info("> API Version: {} ({})", apiVersion.currentVersion(), apiVersion.latestVersion());
-            this.logger.info("> Plugin Version: {} ({})", pluginVersion.currentVersion(), pluginVersion.latestVersion());
+            this.logger.info("> API Version: {} ({})", apiVersion.current(), apiVersion.latest());
+            this.logger.info("> Plugin Version: {} ({})", pluginVersion.current(), pluginVersion.latest());
 
             if (apiVersion.updateAvailable()) {
-                this.logger.warn("API update available ({} -> {}), please update to the latest version", apiVersion.currentVersion(), apiVersion.latestVersion());
+                this.logger.warn("API update available ({} -> {}), please update to the latest version", apiVersion.current(), apiVersion.latest());
             }
 
             if (pluginVersion.updateAvailable()) {
-                this.logger.warn("Plugin update available ({} -> {}), please update to the latest version", pluginVersion.currentVersion(), pluginVersion.latestVersion());
+                this.logger.warn("Plugin update available ({} -> {}), please update to the latest version", pluginVersion.current(), pluginVersion.latest());
             }
 
             if (compatible) {
@@ -94,66 +104,87 @@ public class Lobstar {
     }
 
     public Logger getLogger() {
-        return logger;
+        return this.logger;
     }
 
     public ProxyServer getProxy() {
-        return proxy;
+        return this.proxy;
     }
 
     public SocketManager getSocketManager() {
-        return socketManager;
+        return this.socketManager;
+    }
+
+    public StatusManager getStatusManager() {
+        return this.statusManager;
     }
 
     public ServerManager getServerManager() {
-        return serverManager;
+        return this.serverManager;
     }
 
     public WhitelistManager getWhitelistManager() {
-        return whitelistManager;
+        return this.whitelistManager;
     }
 
     private void init() {
         Sees sees = Sees.getInstance();
 
-        logger.info("Initializing socket manager");
-        socketManager = new SocketManager(this);
-        sees.subscribe(socketManager);
+        this.logger.info("Initializing socket manager");
+        this.socketManager = new SocketManager(this);
+        sees.subscribe(this.socketManager);
 
-        socketManager.addListener(new SyncServersListener());
-        socketManager.addListener(new ServerUpdatedListener());
+        this.socketManager.addListener(new SyncServersListener());
+        this.socketManager.addListener(new ServerCreatedListener());
+        this.socketManager.addListener(new ServerUpdatedListener());
+        this.socketManager.addListener(new ServerDeletedListener());
 
-        logger.info("Initializing server manager");
-        serverManager = new ServerManager(this);
-        sees.subscribe(serverManager);
+        this.socketManager.addListener(new KickPlayerListener());
+        this.socketManager.addListener(new KickAllPlayersListener());
+        this.socketManager.addListener(new MovePlayerListener());
+        this.socketManager.addListener(new MoveAllPlayersListener());
 
-        logger.info("Initializing whitelist manager");
-        whitelistManager = new WhitelistManager();
-        sees.subscribe(whitelistManager);
+        this.logger.info("Initializing status manager");
+        this.statusManager = new StatusManager(this);
 
-        logger.info("Registering listeners");
-        EventManager eventManager = proxy.getEventManager();
+        this.logger.info("Initializing server manager");
+        this.serverManager = new ServerManager(this);
+        sees.subscribe(this.serverManager);
+
+        this.logger.info("Initializing whitelist manager");
+        this.whitelistManager = new WhitelistManager();
+        sees.subscribe(this.whitelistManager);
+
+        this.logger.info("Registering sees listeners");
+        sees.subscribe(new TestListener());
+
+        this.logger.info("Registering velocity listeners");
+        EventManager eventManager = this.proxy.getEventManager();
         eventManager.register(this, new ConnectionListener());
+        eventManager.register(this, new WhitelistListener());
 
-        logger.info("Registering commands");
-        CommandManager commandManager = proxy.getCommandManager();
+        this.logger.info("Registering commands");
+        CommandManager commandManager = this.proxy.getCommandManager();
         commandManager.register(commandManager.metaBuilder("lobby").aliases("hub", "l").plugin(this).build(), new LobbyCommand().lobbyCommand);
 
-        logger.info("Connecting to socket");
-        socketManager.connect().subscribe(() -> logger.info("Connected to socket"), throwable -> logger.error("Failed to connect to socket"));
+        this.logger.info("Connecting to socket");
+        this.socketManager.connect().subscribe(() -> this.logger.info("Connected to socket"), throwable -> this.logger.error("Failed to connect to socket"));
     }
 
     private void shutdown() {
-        logger.info("Unsubscribing from Sees");
+        this.logger.info("Cancelling sync task");
+        this.statusManager.cancelSyncTask();
+
+        this.logger.info("Unsubscribing from Sees");
         Sees sees = Sees.getInstance();
-        sees.unsubscribe(socketManager);
-        sees.unsubscribe(serverManager);
-        sees.unsubscribe(whitelistManager);
+        sees.unsubscribe(this.socketManager);
+        sees.unsubscribe(this.serverManager);
+        sees.unsubscribe(this.whitelistManager);
 
-        logger.info("Disconnecting from socket");
-        socketManager.disconnect().subscribe(() -> logger.info("Disconnected from socket"), throwable -> logger.error("Failed to disconnect from socket"));
+        this.logger.info("Disconnecting from socket");
+        this.socketManager.disconnect().subscribe(() -> this.logger.info("Disconnected from socket"), throwable -> this.logger.error("Failed to disconnect from socket"));
 
-        logger.info("Shutting down executor service");
+        this.logger.info("Shutting down executor service");
         AsyncRequest.shutdown();
     }
 }

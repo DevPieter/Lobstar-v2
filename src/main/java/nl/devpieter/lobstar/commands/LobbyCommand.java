@@ -10,7 +10,7 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.enums.ServerType;
 import nl.devpieter.lobstar.managers.ServerManager;
-import nl.devpieter.lobstar.models.Server;
+import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.utils.PlayerUtils;
 import nl.devpieter.lobstar.utils.ServerUtils;
 import org.jetbrains.annotations.NotNull;
