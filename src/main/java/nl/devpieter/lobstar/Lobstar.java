@@ -10,7 +10,8 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.ProxyServer;
 import nl.devpieter.lobstar.api.request.AsyncRequest;
 import nl.devpieter.lobstar.commands.LobbyCommand;
-import nl.devpieter.lobstar.listeners.sees.TestListener;
+import nl.devpieter.lobstar.listeners.sees.PlayerKickListener;
+import nl.devpieter.lobstar.listeners.sees.PlayerMoveListener;
 import nl.devpieter.lobstar.listeners.velocity.ConnectionListener;
 import nl.devpieter.lobstar.listeners.velocity.WhitelistListener;
 import nl.devpieter.lobstar.managers.ServerManager;
@@ -156,7 +157,8 @@ public class Lobstar {
         sees.subscribe(this.whitelistManager);
 
         this.logger.info("Registering sees listeners");
-        sees.subscribe(new TestListener());
+        sees.subscribe(new PlayerKickListener());
+        sees.subscribe(new PlayerMoveListener());
 
         this.logger.info("Registering velocity listeners");
         EventManager eventManager = this.proxy.getEventManager();

@@ -39,7 +39,7 @@ public class Server {
     }
 
     public @Nullable RegisteredServer findRegisteredServer() {
-        return Lobstar.getInstance().getProxy().getServer(name()).orElse(null);
+        return Lobstar.getInstance().getProxy().getServer(this.name()).orElse(null);
     }
 
     public boolean isCriticallyDifferent(@NotNull Server server) {

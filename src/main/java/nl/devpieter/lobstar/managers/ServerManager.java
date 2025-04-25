@@ -1,5 +1,6 @@
 package nl.devpieter.lobstar.managers;
 
+import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
@@ -8,6 +9,7 @@ import net.kyori.adventure.text.Component;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.enums.ServerType;
 import nl.devpieter.lobstar.models.server.Server;
+import nl.devpieter.lobstar.models.whitelist.WhitelistEntry;
 import nl.devpieter.lobstar.socket.events.server.ServerCreatedEvent;
 import nl.devpieter.lobstar.socket.events.server.ServerDeletedEvent;
 import nl.devpieter.lobstar.socket.events.server.ServerUpdatedEvent;
@@ -28,11 +30,13 @@ public class ServerManager implements Listener {
 
     private final List<Server> servers = new ArrayList<>();
 
+    private final Lobstar lobstar;
     private final StatusManager statusManager;
     private final ProxyServer proxy;
     private final Logger logger;
 
     public ServerManager(@NotNull Lobstar lobstar) {
+        this.lobstar = lobstar;
         this.statusManager = lobstar.getStatusManager();
         this.proxy = lobstar.getProxy();
         this.logger = lobstar.getLogger();
@@ -62,6 +66,46 @@ public class ServerManager implements Listener {
         return this.servers.stream().filter(server -> server.id().equals(serverId)).findFirst().orElse(null);
     }
 
+    public @Nullable Server getLobbyServer(@NotNull Player player) {
+        List<Server> lobbyServers = this.getServers(ServerType.Lobby);
+        if (lobbyServers.isEmpty()) {
+            this.logger.warn("No lobby servers registered");
+            return null;
+        }
+
+        // We prioritize non-whitelisted servers over whitelisted servers to avoid having to check the whitelist for every player
+        for (var server : lobbyServers.stream().filter(s -> !s.isWhitelistEnabled()).toList()) {
+            RegisteredServer registeredServer = server.findRegisteredServer();
+            if (registeredServer == null || !ServerUtils.isOnline(registeredServer)) continue;
+
+            return server;
+        }
+
+        // TODO - Optimize
+        WhitelistManager whitelistManager = this.lobstar.getWhitelistManager();
+
+        for (var server : lobbyServers.stream().filter(Server::isWhitelistEnabled).toList()) {
+            RegisteredServer registeredServer = server.findRegisteredServer();
+            if (registeredServer == null || !ServerUtils.isOnline(registeredServer)) continue;
+
+            try {
+                WhitelistEntry entry = whitelistManager.getWhitelistEntry(server.id(), player.getUniqueId()).join();
+                if (entry == null) {
+                    logger.info("No whitelist entry found for {} on {}", player.getUsername(), server.name());
+                    continue;
+                }
+
+                // TODO - Check ban status
+
+                if (entry.isWhitelisted()) return server;
+            } catch (Exception e) {
+                logger.error("An error occurred while checking whitelist status for {} on {}", player.getUsername(), server.name(), e);
+            }
+        }
+
+        return null;
+    }
+
     @EventListener
     public void onSyncServers(SyncServersEvent event) {
         this.logger.info("[SyncServersEvent] Syncing servers");
@@ -76,6 +120,7 @@ public class ServerManager implements Listener {
         event.servers().forEach(this::registerServer);
 
         this.logger.info("[SyncServersEvent] Synced servers");
+        this.statusManager.syncPlayerStatuses();
     }
 
     @EventListener

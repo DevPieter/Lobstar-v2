@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'nl.devpieter'
-version = '2.0'
+version = '2.1.0'
 
 jar {
     destinationDirectory = file("C:\\Users\\devpi\\Desktop\\test_server\\Velocity Lobbies Setup\\velocity\\plugins")

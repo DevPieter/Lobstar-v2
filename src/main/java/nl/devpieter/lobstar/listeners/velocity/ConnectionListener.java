@@ -36,7 +36,7 @@ public class ConnectionListener {
 
         ServerConnection current = player.getCurrentServer().orElse(null);
         if (current != null) {
-            Server currentServer = serverManager.getServer(current);
+            Server currentServer = this.serverManager.getServer(current);
             if (currentServer != null) this.statusManager.setServerStatus(currentServer);
         }
 
@@ -55,7 +55,7 @@ public class ConnectionListener {
         ServerConnection current = player.getCurrentServer().orElse(null);
         if (current == null) return;
 
-        Server currentServer = serverManager.getServer(current);
+        Server currentServer = this.serverManager.getServer(current);
         if (currentServer != null) this.statusManager.setServerStatus(currentServer);
     }
 }
