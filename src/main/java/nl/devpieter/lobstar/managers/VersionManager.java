@@ -13,8 +13,8 @@ import java.util.function.Consumer;
 public class VersionManager {
 
     private final ConfigManager configManager = ConfigManager.getInstance();
-    private final String version = configManager.getString("version");
-    private final String versionApiUrl = configManager.getString("api_base_url") + "/api/version";
+    private final String version = this.configManager.getString("version");
+    private final String versionApiUrl = this.configManager.getString("api_base_url") + "/api/version";
 
     private boolean successfullyLoaded;
 

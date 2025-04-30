@@ -3,6 +3,7 @@ package nl.devpieter.lobstar.managers;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.leangen.geantyref.TypeToken;
+import nl.devpieter.lobstar.BuildConstants;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.utils.FileUtils;
 import org.jetbrains.annotations.Nullable;
@@ -12,7 +13,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 public class ConfigManager {
@@ -28,7 +28,7 @@ public class ConfigManager {
     private final LinkedHashMap<String, String> config = new LinkedHashMap<>();
 
     private ConfigManager() {
-        this.defaultConfig.put("version", "1.0.0");
+        this.defaultConfig.put("version", BuildConstants.VERSION);
         this.defaultConfig.put("api_key", "my-secret-api-key");
         this.defaultConfig.put("api_base_url", "http://127.0.0.1:5200");
         this.load();

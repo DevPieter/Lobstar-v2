@@ -1,14 +1,13 @@
 package nl.devpieter.lobstar.models.server;
 
-import org.jetbrains.annotations.Nullable;
+import nl.devpieter.lobstar.models.common.MinecraftVersion;
 
 public record ServerStatus(
         boolean isOnline,
 
-        int proxyPlayers,
-        int serverPlayers,
+        int onlinePlayers,
         int maxPlayers,
 
-        @Nullable String versionName
+        MinecraftVersion version
 ) {
 }

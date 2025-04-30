@@ -14,7 +14,6 @@ public abstract class RequestHelper {
 
     public static final String API_KEY_HEADER = "X-Api-Key";
     public static final String USER_AGENT_HEADER = "User-Agent";
-    public static final String USER_AGENT = "Lobstar/1.0";
 
     private static final ConfigManager CONFIG_MANAGER = ConfigManager.getInstance();
     protected static final HttpClient CLIENT = HttpClient.newHttpClient();
@@ -27,14 +26,14 @@ public abstract class RequestHelper {
     }
 
     public static HttpRequest.Builder createRequestBuilder(@NotNull URI uri, boolean withAuth) {
-        var builder = HttpRequest.newBuilder()
-                .header(USER_AGENT_HEADER, USER_AGENT)
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .header(USER_AGENT_HEADER, "Lobstar/" + CONFIG_MANAGER.getString("version"))
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .uri(uri);
 
         if (withAuth) {
-            var key = CONFIG_MANAGER.getString("api_key");
+            String key = CONFIG_MANAGER.getString("api_key");
             if (key == null) throw new IllegalStateException("API key is not set");
 
             builder.header(API_KEY_HEADER, key);

@@ -7,6 +7,7 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import nl.devpieter.lobstar.Lobstar;
+import nl.devpieter.lobstar.models.common.MinecraftVersion;
 import nl.devpieter.lobstar.models.player.PlayerStatus;
 import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.models.server.ServerStatus;
@@ -15,6 +16,7 @@ import nl.devpieter.lobstar.utils.ServerUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -76,10 +78,23 @@ public class StatusManager {
         Server server = this.getServerManager().getServer(current);
         if (server == null) return this.clearPlayerStatus(player);
 
+        InetSocketAddress socketAddress = player.getRemoteAddress();
+        String address = socketAddress.getAddress().getHostAddress();
+        int port = socketAddress.getPort();
+
+        MinecraftVersion version = MinecraftVersion.of(player.getProtocolVersion());
+
         PlayerStatus status = new PlayerStatus(
                 player.getUsername(),
+
+                player.getPing(),
                 true,
-                server.id()
+
+                address,
+                port,
+
+                server.id(),
+                version
         );
 
         this.socketManager.send("SetPlayerStatus", player.getUniqueId(), status);
@@ -94,17 +109,18 @@ public class StatusManager {
         if (ping == null) return this.clearServerStatus(server);
 
         ServerPing.Players players = ping.getPlayers().orElse(null);
+        MinecraftVersion version = MinecraftVersion.of(ping.getVersion());
 
-        int proxyPlayers = ServerUtils.getPlayerCount(registered);
-        int serverPlayers = players != null ? players.getOnline() : 0;
+        int onlinePlayers = ServerUtils.getPlayerCount(registered);
         int maxPlayers = players != null ? players.getMax() : 0;
 
         ServerStatus status = new ServerStatus(
                 true,
-                proxyPlayers,
-                serverPlayers,
+
+                onlinePlayers,
                 maxPlayers,
-                ping.getVersion().getName()
+
+                version
         );
 
         this.socketManager.send("SetServerStatus", server.id(), status);
