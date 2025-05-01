@@ -14,7 +14,6 @@ public class Server {
     private final UUID ownerId;
 
     private final String name;
-    private @Nullable String prefix;
     private String displayName;
 
     private int type;
@@ -23,12 +22,13 @@ public class Server {
     private final String address;
     private final int port;
 
-    public Server(UUID id, UUID ownerId, String name, @Nullable String prefix, String displayName, int type, boolean isWhitelistEnabled, String address, int port) {
+    private @Nullable String virtualHost;
+
+    public Server(UUID id, UUID ownerId, String name, String displayName, int type, boolean isWhitelistEnabled, String address, int port, @Nullable String virtualHost) {
         this.id = id;
         this.ownerId = ownerId;
 
         this.name = name;
-        this.prefix = prefix;
         this.displayName = displayName;
 
         this.type = type;
@@ -36,6 +36,8 @@ public class Server {
 
         this.address = address;
         this.port = port;
+
+        this.virtualHost = virtualHost;
     }
 
     public @Nullable RegisteredServer findRegisteredServer() {
@@ -58,14 +60,6 @@ public class Server {
 
     public String name() {
         return name;
-    }
-
-    public @Nullable String prefix() {
-        return prefix;
-    }
-
-    public void setPrefix(@Nullable String prefix) {
-        this.prefix = prefix;
     }
 
     public String displayName() {
@@ -102,5 +96,13 @@ public class Server {
 
     public int port() {
         return port;
+    }
+
+    public String virtualHost() {
+        return virtualHost;
+    }
+
+    public void setVirtualHost(@Nullable String virtualHost) {
+        this.virtualHost = virtualHost;
     }
 }

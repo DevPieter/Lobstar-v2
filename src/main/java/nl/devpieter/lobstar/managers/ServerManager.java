@@ -51,22 +51,35 @@ public class ServerManager implements Listener {
     }
 
     public @Nullable Server getServer(@NotNull RegisteredServer registeredServer) {
-        return this.getServer(registeredServer.getServerInfo().getName());
+        return this.getServerByName(registeredServer.getServerInfo().getName());
     }
 
     public @Nullable Server getServer(@NotNull ServerConnection serverConnection) {
-        return this.getServer(serverConnection.getServerInfo().getName());
+        return this.getServerByName(serverConnection.getServerInfo().getName());
     }
 
-    public @Nullable Server getServer(String name) {
+    public @Nullable Server getServerByName(String name) {
         return this.servers.stream().filter(server -> server.name().equals(name)).findFirst().orElse(null);
     }
 
-    public @Nullable Server getServer(UUID serverId) {
+    public @Nullable Server getServerById(UUID serverId) {
         return this.servers.stream().filter(server -> server.id().equals(serverId)).findFirst().orElse(null);
     }
 
-    public @Nullable Server getLobbyServer(@NotNull Player player) {
+    public @Nullable Server getServerByVirtualHost(@NotNull String virtualHostString) {
+        return this.servers.stream().filter(server -> virtualHostString.equals(server.virtualHost())).findFirst().orElse(null);
+    }
+
+    /**
+     * Retrieves an available lobby server for the given player.
+     * <p>
+     * This method prioritizes non-whitelisted servers over whitelisted servers to minimize
+     * the need for whitelist checks. If no suitable server is found, it returns null.
+     *
+     * @param player The player for whom to find an available lobby server.
+     * @return The available lobby server, or null if no suitable server is found.
+     */
+    public @Nullable Server getAvailableLobbyServer(@NotNull Player player) {
         List<Server> lobbyServers = this.getServers(ServerType.Lobby);
         if (lobbyServers.isEmpty()) {
             this.logger.warn("No lobby servers registered");
@@ -106,6 +119,35 @@ public class ServerManager implements Listener {
         return null;
     }
 
+    public @Nullable Server tryGetVirtualHostServer(@NotNull Player player) {
+        InetSocketAddress requestedAddress = player.getVirtualHost().orElse(null);
+        if (requestedAddress == null) return null;
+
+        String requestedHost = requestedAddress.getHostString(); // TODO - Add more validation
+        Server server = this.getServerByVirtualHost(requestedHost);
+        if (server == null) {
+            // We log this at info level, since this is player requested
+            this.logger.info("<GVH> {} requested a server with virtual host {}, but no server was found", player.getUsername(), requestedHost);
+            return null;
+        }
+
+        RegisteredServer registeredServer = server.findRegisteredServer();
+        if (registeredServer == null) {
+            this.logger.warn("<GVH> {} requested a server with virtual host {}, but the server is not registered", player.getUsername(), requestedHost);
+            return null;
+        }
+
+        if (!ServerUtils.isOnline(registeredServer)) {
+            this.logger.warn("<GVH> {} requested a server with virtual host {}, but the server is offline", player.getUsername(), requestedHost);
+            return null;
+        }
+
+        // TODO - Check if the player is whitelisted on the server
+        // TODO - Check if the player is banned on the server
+
+        return server;
+    }
+
     @EventListener
     public void onSyncServers(SyncServersEvent event) {
         this.logger.info("[SyncServersEvent] Syncing servers");
@@ -125,8 +167,8 @@ public class ServerManager implements Listener {
 
     @EventListener
     public void onServerCreated(ServerCreatedEvent event) {
-        Server existingId = this.getServer(event.serverId());
-        Server existingName = this.getServer(event.server().name());
+        Server existingId = this.getServerById(event.serverId());
+        Server existingName = this.getServerByName(event.server().name());
 
         if (existingId != null || existingName != null) {
             this.logger.warn("[ServerCreatedEvent] Server already exists: {} ({})", event.server().name(), event.serverId());
@@ -139,7 +181,7 @@ public class ServerManager implements Listener {
 
     @EventListener
     public void onServerUpdated(ServerUpdatedEvent event) {
-        Server existing = this.getServer(event.serverId());
+        Server existing = this.getServerById(event.serverId());
         if (existing == null) {
             this.logger.warn("[ServerUpdatedEvent] Server not found: {} ({})", event.server().name(), event.serverId());
             return;
@@ -159,7 +201,7 @@ public class ServerManager implements Listener {
 
     @EventListener
     public void onServerDeleted(ServerDeletedEvent event) {
-        Server existing = this.getServer(event.serverId());
+        Server existing = this.getServerById(event.serverId());
         if (existing == null) {
             this.logger.warn("[ServerDeletedEvent] Server not found: {}", event.serverId());
             return;
@@ -186,11 +228,12 @@ public class ServerManager implements Listener {
         Server existingServer = servers.stream().filter(s -> s.id().equals(serverId)).findFirst().orElse(null);
         if (existingServer == null) return;
 
-        existingServer.setPrefix(server.prefix());
         existingServer.setDisplayName(server.displayName());
 
         existingServer.setType(server.type());
         existingServer.setWhitelistEnabled(server.isWhitelistEnabled());
+
+        existingServer.setVirtualHost(server.virtualHost());
 
         this.statusManager.setServerStatus(existingServer);
         this.logger.info("[ServerManager] Updated server: {} ({})", existingServer.name(), existingServer.address());

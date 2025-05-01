@@ -11,12 +11,14 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import nl.devpieter.lobstar.Lobstar;
+import nl.devpieter.lobstar.enums.ServerType;
 import nl.devpieter.lobstar.managers.ServerManager;
 import nl.devpieter.lobstar.managers.WhitelistManager;
 import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.models.whitelist.WhitelistEntry;
 import nl.devpieter.lobstar.utils.PlayerUtils;
 import nl.devpieter.lobstar.utils.ServerUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -80,21 +82,39 @@ public class WhitelistListener {
 
     @Subscribe
     public void onPlayerChooseInitialServer(PlayerChooseInitialServerEvent event) {
-        this.logger.info("<CIS> Choosing initial lobby server for {}", event.getPlayer().getUsername());
+        this.logger.info("<CIS> Choosing initial server for {}", event.getPlayer().getUsername());
 
-        Server server = this.serverManager.getLobbyServer(event.getPlayer());
+        Server server = this.getServerForPlayer(event.getPlayer());
         if (server == null) {
-            this.logger.warn("<CIS> No lobby server found for {}", event.getPlayer().getUsername());
+            this.logger.warn("<CIS> No initial server found for {}", event.getPlayer().getUsername());
             return;
         }
 
         RegisteredServer registeredServer = server.findRegisteredServer();
         if (registeredServer == null) {
-            this.logger.warn("<CIS> Lobby server {} not registered", server.name());
+            this.logger.warn("<CIS> Found initial server {} but it is not registered", server.name());
             return;
         }
 
+        this.logger.info("<CIS> Initial server found for {}, sending to {}", event.getPlayer().getUsername(), server.name());
         event.setInitialServer(registeredServer);
+    }
+
+    private @Nullable Server getServerForPlayer(@NotNull Player player) {
+        Server requestedServer = this.serverManager.tryGetVirtualHostServer(player);
+        if (requestedServer != null) {
+            this.logger.info("<SFP> Found requested server {} for {}", requestedServer.name(), player.getUsername());
+            return requestedServer;
+        }
+
+        Server server = this.serverManager.getAvailableLobbyServer(player);
+        if (server == null) {
+            this.logger.warn("<SFP> No lobby server found for {}", player.getUsername());
+            return null;
+        }
+
+        this.logger.info("<SFP> Found lobby server {} for {}", server.name(), player.getUsername());
+        return server;
     }
 
     @Subscribe
@@ -103,12 +123,18 @@ public class WhitelistListener {
         // this is already checked in PlayerChooseInitialServerEvent
         if (event.getPreviousServer() == null) return;
 
-        // TODO - Check if already checking whitelist, for when player spams commands
-
         Player player = event.getPlayer();
         String name = event.getOriginalServer().getServerInfo().getName();
 
-        Server server = this.serverManager.getServer(name);
+        if (this.whitelistManager.hasPendingRequest(player.getUniqueId())) {
+            this.logger.info("<Server> {} has a pending request", player.getUsername());
+
+            PlayerUtils.sendErrorMessage(player, this.pending);
+            event.setResult(ServerPreConnectEvent.ServerResult.denied());
+            return;
+        }
+
+        Server server = this.serverManager.getServerByName(name);
         if (server == null) {
             this.logger.error("<Server> Server {} not found", name);
 
@@ -142,14 +168,6 @@ public class WhitelistListener {
 
             PlayerUtils.sendWhisperMessage(player, String.format("Sending you to %s...", server.displayName()));
             event.setResult(ServerPreConnectEvent.ServerResult.allowed(registeredServer));
-            return;
-        }
-
-        if (this.whitelistManager.hasPendingRequest(player.getUniqueId())) {
-            this.logger.info("<Server> {} has a pending request", player.getUsername());
-
-            PlayerUtils.sendErrorMessage(player, this.pending);
-            event.setResult(ServerPreConnectEvent.ServerResult.denied());
             return;
         }
 
@@ -199,17 +217,35 @@ public class WhitelistListener {
     public void onKickedFromServer(KickedFromServerEvent event) {
         this.logger.info("<KFS> {} was kicked, redirecting to lobby", event.getPlayer().getUsername());
 
-        Server server = this.serverManager.getLobbyServer(event.getPlayer());
+        if (event.kickedDuringServerConnect()) {
+            this.logger.info("<KFS> {} was kicked during server connect, not redirecting", event.getPlayer().getUsername());
+            return;
+        }
+
+        Server from = this.serverManager.getServer(event.getServer());
+        if (from != null && from.getType() == ServerType.Lobby) {
+            this.logger.info("<KFS> {} was kicked from a lobby server, not redirecting", event.getPlayer().getUsername());
+            return;
+
+        }
+
+        Server server = this.serverManager.getAvailableLobbyServer(event.getPlayer());
         if (server == null) {
             this.logger.warn("<KFS> No lobby server found for {}", event.getPlayer().getUsername());
-            event.setResult(KickedFromServerEvent.Notify.create(this.noLobby));
+            event.setResult(KickedFromServerEvent.DisconnectPlayer.create(this.noLobby));
             return;
         }
 
         RegisteredServer registeredServer = server.findRegisteredServer();
         if (registeredServer == null) {
             this.logger.warn("<KFS> Lobby server {} not registered", server.name());
-            event.setResult(KickedFromServerEvent.Notify.create(this.noLobby));
+            event.setResult(KickedFromServerEvent.DisconnectPlayer.create(this.noLobby));
+            return;
+        }
+
+        if (event.getServer() == registeredServer) {
+            // This should never happen, but just in case
+            this.logger.warn("<KFS> {} was kicked from the lobby server they were already on, not redirecting", event.getPlayer().getUsername());
             return;
         }
 

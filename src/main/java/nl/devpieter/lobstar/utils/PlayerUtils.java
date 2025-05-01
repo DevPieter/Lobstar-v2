@@ -19,7 +19,7 @@ public class PlayerUtils {
         ServerConnection serverConnection = player.getCurrentServer().orElse(null);
         if (serverConnection == null) return null;
 
-        Server server = serverManager.getServer(serverConnection.getServerInfo().getName());
+        Server server = serverManager.getServerByName(serverConnection.getServerInfo().getName());
         if (server == null) return null;
 
         return server.getType();

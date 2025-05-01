@@ -52,7 +52,7 @@ public class PlayerKickListener implements Listener {
     }
 
     private void kickFromServer(@NotNull UUID serverId, @Nullable String reason, boolean toLobby) {
-        Server server = this.serverManager.getServer(serverId);
+        Server server = this.serverManager.getServerById(serverId);
         if (server == null) return;
 
         RegisteredServer fromServer = server.findRegisteredServer();
@@ -74,7 +74,7 @@ public class PlayerKickListener implements Listener {
             return;
         }
 
-        Server server = this.serverManager.getLobbyServer(player);
+        Server server = this.serverManager.getAvailableLobbyServer(player);
         if (server == null) {
             player.disconnect(component);
             return;

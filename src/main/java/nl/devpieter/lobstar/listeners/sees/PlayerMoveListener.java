@@ -54,7 +54,7 @@ public class PlayerMoveListener implements Listener {
     }
 
     private void moveFromServer(@NotNull UUID fromServerId, @NotNull RegisteredServer toServer) {
-        Server server = this.serverManager.getServer(fromServerId);
+        Server server = this.serverManager.getServerById(fromServerId);
         if (server == null) return;
 
         RegisteredServer fromServer = server.findRegisteredServer();
@@ -76,7 +76,7 @@ public class PlayerMoveListener implements Listener {
     }
 
     private @Nullable RegisteredServer findAsRegisteredServer(@NotNull UUID serverId) {
-        Server server = this.serverManager.getServer(serverId);
+        Server server = this.serverManager.getServerById(serverId);
         if (server == null) return null;
 
         return server.findRegisteredServer();

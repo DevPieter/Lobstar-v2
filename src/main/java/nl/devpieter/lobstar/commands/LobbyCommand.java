@@ -35,7 +35,7 @@ public class LobbyCommand {
             }
         }
 
-        Server server = this.serverManager.getLobbyServer(player);
+        Server server = this.serverManager.getAvailableLobbyServer(player);
         if (server == null) {
             PlayerUtils.sendErrorMessage(player, "No lobby servers registered");
             return 1;
