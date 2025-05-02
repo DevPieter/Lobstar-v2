@@ -4,15 +4,14 @@ import com.microsoft.signalr.Action2;
 import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.socket.events.server.ServerUpdatedEvent;
 import nl.devpieter.lobstar.socket.listeners.ISocketListener;
+import nl.devpieter.lobstar.socket.listeners.SocketListener;
 import nl.devpieter.sees.Sees;
 
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.UUID;
 
-public class ServerUpdatedListener implements ISocketListener<Action2<UUID, Server>> {
-
-    private final Sees sees = Sees.getInstance();
+public class ServerUpdatedListener extends SocketListener<Action2<UUID, Server>> {
 
     @Override
     public String getTarget() {
@@ -26,6 +25,6 @@ public class ServerUpdatedListener implements ISocketListener<Action2<UUID, Serv
 
     @Override
     public Action2<UUID, Server> getAction() {
-        return (serverId, server) -> sees.call(new ServerUpdatedEvent(serverId, server));
+        return (serverId, server) -> this.sees.call(new ServerUpdatedEvent(serverId, server));
     }
 }

@@ -4,14 +4,13 @@ import com.microsoft.signalr.Action1;
 import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.socket.events.server.SyncServersEvent;
 import nl.devpieter.lobstar.socket.listeners.ISocketListener;
+import nl.devpieter.lobstar.socket.listeners.SocketListener;
 import nl.devpieter.sees.Sees;
 
 import java.lang.reflect.Type;
 import java.util.List;
 
-public class SyncServersListener implements ISocketListener<Action1<Server[]>> {
-
-    private final Sees sees = Sees.getInstance();
+public class SyncServersListener extends SocketListener<Action1<Server[]>> {
 
     @Override
     public String getTarget() {
@@ -25,6 +24,6 @@ public class SyncServersListener implements ISocketListener<Action1<Server[]>> {
 
     @Override
     public Action1<Server[]> getAction() {
-        return (servers) -> sees.call(new SyncServersEvent(List.of(servers)));
+        return (servers) -> this.sees.call(new SyncServersEvent(List.of(servers)));
     }
 }

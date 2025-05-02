@@ -67,7 +67,8 @@ public class ServerManager implements Listener {
     }
 
     public @Nullable Server getServerByVirtualHost(@NotNull String virtualHostString) {
-        return this.servers.stream().filter(server -> virtualHostString.equals(server.virtualHost())).findFirst().orElse(null);
+        return null;
+//        return this.servers.stream().filter(server -> virtualHostString.equals(server.virtualHost())).findFirst().orElse(null);
     }
 
     /**
@@ -232,8 +233,6 @@ public class ServerManager implements Listener {
 
         existingServer.setType(server.type());
         existingServer.setWhitelistEnabled(server.isWhitelistEnabled());
-
-        existingServer.setVirtualHost(server.virtualHost());
 
         this.statusManager.setServerStatus(existingServer);
         this.logger.info("[ServerManager] Updated server: {} ({})", existingServer.name(), existingServer.address());

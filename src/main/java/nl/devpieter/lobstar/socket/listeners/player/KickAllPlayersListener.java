@@ -3,15 +3,14 @@ package nl.devpieter.lobstar.socket.listeners.player;
 import com.microsoft.signalr.Action3;
 import nl.devpieter.lobstar.socket.events.player.KickAllPlayersEvent;
 import nl.devpieter.lobstar.socket.listeners.ISocketListener;
+import nl.devpieter.lobstar.socket.listeners.SocketListener;
 import nl.devpieter.sees.Sees;
 
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.UUID;
 
-public class KickAllPlayersListener implements ISocketListener<Action3<UUID, String, Boolean>> {
-
-    private final Sees sees = Sees.getInstance();
+public class KickAllPlayersListener extends SocketListener<Action3<UUID, String, Boolean>> {
 
     @Override
     public String getTarget() {
@@ -25,6 +24,6 @@ public class KickAllPlayersListener implements ISocketListener<Action3<UUID, Str
 
     @Override
     public Action3<UUID, String, Boolean> getAction() {
-        return (serverId, reason, toLobby) -> sees.call(new KickAllPlayersEvent(serverId, reason, toLobby));
+        return (serverId, reason, toLobby) -> this.sees.call(new KickAllPlayersEvent(serverId, reason, toLobby));
     }
 }
