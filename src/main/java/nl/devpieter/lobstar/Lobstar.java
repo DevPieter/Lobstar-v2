@@ -28,6 +28,10 @@ import nl.devpieter.lobstar.socket.listeners.server.ServerCreatedListener;
 import nl.devpieter.lobstar.socket.listeners.server.ServerDeletedListener;
 import nl.devpieter.lobstar.socket.listeners.server.ServerUpdatedListener;
 import nl.devpieter.lobstar.socket.listeners.server.SyncServersListener;
+import nl.devpieter.lobstar.socket.listeners.virtualHost.SyncVirtualHostsListener;
+import nl.devpieter.lobstar.socket.listeners.virtualHost.VirtualHostCreatedListener;
+import nl.devpieter.lobstar.socket.listeners.virtualHost.VirtualHostDeletedListener;
+import nl.devpieter.lobstar.socket.listeners.virtualHost.VirtualHostUpdatedListener;
 import nl.devpieter.sees.Sees;
 import org.slf4j.Logger;
 
@@ -135,15 +139,20 @@ public class Lobstar {
         this.socketManager = new SocketManager(this);
         sees.subscribe(this.socketManager);
 
+        this.socketManager.addListener(new KickPlayerListener());
+        this.socketManager.addListener(new KickAllPlayersListener());
+        this.socketManager.addListener(new MovePlayerListener());
+        this.socketManager.addListener(new MoveAllPlayersListener());
+
         this.socketManager.addListener(new SyncServersListener());
         this.socketManager.addListener(new ServerCreatedListener());
         this.socketManager.addListener(new ServerUpdatedListener());
         this.socketManager.addListener(new ServerDeletedListener());
 
-        this.socketManager.addListener(new KickPlayerListener());
-        this.socketManager.addListener(new KickAllPlayersListener());
-        this.socketManager.addListener(new MovePlayerListener());
-        this.socketManager.addListener(new MoveAllPlayersListener());
+        this.socketManager.addListener(new SyncVirtualHostsListener());
+        this.socketManager.addListener(new VirtualHostCreatedListener());
+        this.socketManager.addListener(new VirtualHostUpdatedListener());
+        this.socketManager.addListener(new VirtualHostDeletedListener());
 
         this.logger.info("Initializing status manager");
         this.statusManager = new StatusManager(this);
