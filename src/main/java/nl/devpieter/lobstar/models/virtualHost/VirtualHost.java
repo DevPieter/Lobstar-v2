@@ -3,6 +3,7 @@ package nl.devpieter.lobstar.models.virtualHost;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.enums.HostnameCheckType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -13,17 +14,17 @@ public class VirtualHost {
 
     private final UUID id;
 
-    public final UUID serverId;
-    public final UUID issuerId;
+    private final UUID serverId;
+    private final UUID issuerId;
 
-    public String hostname;
-    public String normalizedHostname;
+    private String hostname;
+    private @Nullable String normalizedHostname;
 
-    public boolean ignoreCase;
-    public int checkType;
+    private boolean ignoreCase;
+    private int checkType;
 
-    public boolean isDefault;
-    public boolean isEnabled;
+    private boolean isDefault;
+    private boolean isEnabled;
 
     public VirtualHost(UUID id, UUID serverId, UUID issuerId, String hostname, boolean ignoreCase, int checkType, boolean isDefault, boolean isEnabled) {
         this.id = id;
@@ -32,7 +33,6 @@ public class VirtualHost {
         this.issuerId = issuerId;
 
         this.hostname = hostname;
-        this.normalizedHostname = this.normalize(hostname);
 
         this.ignoreCase = ignoreCase;
         this.checkType = checkType;
@@ -58,6 +58,7 @@ public class VirtualHost {
     }
 
     public String normalizedHostname() {
+        if (this.normalizedHostname == null) this.normalizedHostname = this.normalize(hostname);
         return normalizedHostname;
     }
 
@@ -108,7 +109,7 @@ public class VirtualHost {
 
     public boolean compare(@NotNull String hostname) {
         String toCheck = this.ignoreCase ? this.normalize(hostname) : hostname;
-        String toCompare = this.ignoreCase ? this.normalizedHostname : this.hostname;
+        String toCompare = this.ignoreCase ? this.normalizedHostname() : this.hostname;
 
         return switch (this.getCheckType()) {
             case Exact -> toCheck.equals(toCompare);
