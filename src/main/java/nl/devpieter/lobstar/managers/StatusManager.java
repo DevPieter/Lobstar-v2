@@ -7,13 +7,20 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import nl.devpieter.lobstar.Lobstar;
+import nl.devpieter.lobstar.events.server.RegisteredServerDeletedEvent;
+import nl.devpieter.lobstar.events.server.RegisteredServerRegisteredEvent;
+import nl.devpieter.lobstar.events.server.RegisteredServerUpdatedEvent;
+import nl.devpieter.lobstar.events.server.RegisteredServersSyncedEvent;
 import nl.devpieter.lobstar.models.common.MinecraftVersion;
 import nl.devpieter.lobstar.models.player.PlayerStatus;
 import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.models.server.ServerStatus;
 import nl.devpieter.lobstar.socket.SocketManager;
 import nl.devpieter.lobstar.utils.ServerUtils;
+import nl.devpieter.sees.Annotations.EventListener;
+import nl.devpieter.sees.Listener.Listener;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
@@ -21,46 +28,53 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class StatusManager {
+public class StatusManager implements Listener {
 
-    private final Lobstar lobstar;
-    private final SocketManager socketManager;
-    private final ProxyServer proxy;
-    private final Logger logger;
+    private static StatusManager INSTANCE;
 
-    private final ScheduledTask syncTask;
+    private final Lobstar lobstar = Lobstar.getInstance();
+    private final SocketManager socketManager = SocketManager.getInstance();
+    private final ServerManager serverManager = ServerManager.getInstance();
 
-    public StatusManager(@NotNull Lobstar lobstar) {
-        this.lobstar = lobstar;
-        this.socketManager = lobstar.getSocketManager();
-        this.proxy = lobstar.getProxy();
-        this.logger = lobstar.getLogger();
+    private final ProxyServer proxy = this.lobstar.getProxy();
+    private final Logger logger = this.lobstar.getLogger();
+
+    private @Nullable ScheduledTask syncTask;
+
+    private StatusManager() {
+    }
+
+    public static StatusManager getInstance() {
+        if (INSTANCE == null) INSTANCE = new StatusManager();
+        return INSTANCE;
+    }
+
+    public void startSyncTask() {
+        this.cancelSyncTask();
+        if (this.syncTask != null) return;
+
+        this.logger.info("[StatusManager] <Sync> Starting status sync task");
 
         this.syncTask = this.proxy.getScheduler().buildTask(this.lobstar, () -> {
-            this.logger.info("[StatusManager] Refreshing player and server statuses");
-
             this.syncServerStatuses().thenCompose(unused -> this.syncPlayerStatuses()).whenComplete((unused, throwable) -> {
-                if (throwable == null) this.logger.info("[StatusManager] Successfully refreshed player and server statuses");
-                else this.logger.error("[StatusManager] Failed to refresh player and server statuses", throwable);
+                if (throwable != null) this.logger.error("[StatusManager] <Sync> Failed to refresh statuses", throwable);
             });
-        }).repeat(Duration.ofMinutes(10)).delay(Duration.ofMinutes(1)).schedule();
+        }).repeat(Duration.ofMinutes(5)).delay(Duration.ofMinutes(1)).schedule();
     }
 
     public void cancelSyncTask() {
-        this.syncTask.cancel();
-    }
+        if (this.syncTask == null) return;
 
-    private ServerManager getServerManager() {
-        return this.lobstar.getServerManager();
+        this.syncTask.cancel();
+        this.syncTask = null;
     }
 
     public CompletableFuture<Void> syncPlayerStatuses() {
-        List<Player> players = this.proxy.getAllPlayers().stream().toList();
-        return this.setPlayerStatuses(players);
+        return this.setPlayerStatuses(this.proxy.getAllPlayers().stream().toList());
     }
 
     public CompletableFuture<Void> syncServerStatuses() {
-        return this.setServerStatuses(this.getServerManager().getServers());
+        return this.setServerStatuses(this.serverManager.getServers());
     }
 
     public CompletableFuture<Void> setPlayerStatuses(@NotNull List<Player> players) {
@@ -75,29 +89,24 @@ public class StatusManager {
         ServerConnection current = player.getCurrentServer().orElse(null);
         if (current == null) return this.clearPlayerStatus(player);
 
-        Server server = this.getServerManager().getServer(current);
+        Server server = this.serverManager.getServer(current);
         if (server == null) return this.clearPlayerStatus(player);
 
         InetSocketAddress socketAddress = player.getRemoteAddress();
-        String address = socketAddress.getAddress().getHostAddress();
-        int port = socketAddress.getPort();
+        InetSocketAddress virtualHost = player.getVirtualHost().orElse(null); // TODO - Send virtual host
 
-        MinecraftVersion version = MinecraftVersion.of(player.getProtocolVersion());
-
-        PlayerStatus status = new PlayerStatus(
+        this.socketManager.send("SetPlayerStatus", player.getUniqueId(), new PlayerStatus(
                 player.getUsername(),
 
                 player.getPing(),
                 true,
 
-                address,
-                port,
+                socketAddress.getAddress().getHostAddress(),
+                socketAddress.getPort(),
 
                 server.id(),
-                version
-        );
-
-        this.socketManager.send("SetPlayerStatus", player.getUniqueId(), status);
+                MinecraftVersion.of(player.getProtocolVersion())
+        ));
         return CompletableFuture.completedFuture(null);
     }
 
@@ -114,16 +123,14 @@ public class StatusManager {
         int onlinePlayers = ServerUtils.getPlayerCount(registered);
         int maxPlayers = players != null ? players.getMax() : 0;
 
-        ServerStatus status = new ServerStatus(
+        this.socketManager.send("SetServerStatus", server.id(), new ServerStatus(
                 true,
 
                 onlinePlayers,
                 maxPlayers,
 
                 version
-        );
-
-        this.socketManager.send("SetServerStatus", server.id(), status);
+        ));
         return CompletableFuture.completedFuture(null);
     }
 
@@ -135,5 +142,30 @@ public class StatusManager {
     public CompletableFuture<Void> clearServerStatus(@NotNull Server server) {
         this.socketManager.send("ClearServerStatus", server.id());
         return CompletableFuture.completedFuture(null);
+    }
+
+    @EventListener
+    public void onRegisteredServerRegistered(RegisteredServerRegisteredEvent event) {
+        Server server = this.serverManager.getServerById(event.serverId());
+        if (server != null) this.setServerStatus(server);
+    }
+
+    @EventListener
+    public void onRegisteredServerUpdated(RegisteredServerUpdatedEvent event) {
+        Server server = this.serverManager.getServerById(event.serverId());
+        if (server != null) this.setServerStatus(server);
+    }
+
+    @EventListener
+    public void onRegisteredServerDeleted(RegisteredServerDeletedEvent event) {
+        if (!event.permanently()) return;
+
+        Server server = this.serverManager.getServerById(event.serverId());
+        if (server != null) this.clearServerStatus(server);
+    }
+
+    @EventListener
+    public void onRegisteredServersSynced(RegisteredServersSyncedEvent event) {
+        this.syncPlayerStatuses();
     }
 }

@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 public class PlayerUtils {
 
     public static @Nullable ServerType getCurrentServerType(@NotNull Player player) {
-        ServerManager serverManager = Lobstar.getInstance().getServerManager();
+        ServerManager serverManager = ServerManager.getInstance();
 
         ServerConnection serverConnection = player.getCurrentServer().orElse(null);
         if (serverConnection == null) return null;

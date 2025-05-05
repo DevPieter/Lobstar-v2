@@ -6,8 +6,8 @@ import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.enums.ServerType;
+import nl.devpieter.lobstar.helpers.ServerHelper;
 import nl.devpieter.lobstar.managers.ServerManager;
 import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.utils.PlayerUtils;
@@ -15,7 +15,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class LobbyCommand {
 
-    private final ServerManager serverManager = Lobstar.getInstance().getServerManager();
+    private final ServerManager serverManager = ServerManager.getInstance();
+    private final ServerHelper serverHelper = ServerHelper.getInstance();
 
     public final BrigadierCommand lobbyCommand = new BrigadierCommand(
             BrigadierCommand.literalArgumentBuilder("lobby")
@@ -35,7 +36,7 @@ public class LobbyCommand {
             }
         }
 
-        Server server = this.serverManager.getAvailableLobbyServer(player);
+        Server server = this.serverHelper.getAvailableLobbyServer(player);
         if (server == null) {
             PlayerUtils.sendErrorMessage(player, "No lobby servers registered");
             return 1;

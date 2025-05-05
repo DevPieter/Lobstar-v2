@@ -1,10 +1,8 @@
-package nl.devpieter.lobstar.managers;
+package nl.devpieter.lobstar;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.leangen.geantyref.TypeToken;
-import nl.devpieter.lobstar.BuildConstants;
-import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.utils.FileUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -17,26 +15,31 @@ import java.util.LinkedHashMap;
 
 public class ConfigManager {
 
-    private static ConfigManager instance;
-
-    private final Logger logger = Lobstar.getInstance().getLogger();
+    private static ConfigManager INSTANCE;
 
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final String configPath = "./plugins/lobstar/config.json";
 
+    private final Logger logger;
+
     private final LinkedHashMap<String, String> defaultConfig = new LinkedHashMap<>();
+    private final LinkedHashMap<String, String> staticConfig = new LinkedHashMap<>();
     private final LinkedHashMap<String, String> config = new LinkedHashMap<>();
 
     private ConfigManager() {
-        this.defaultConfig.put("version", BuildConstants.VERSION);
+        Lobstar lobstar = Lobstar.getInstance();
+        this.logger = lobstar.getLogger();
+
         this.defaultConfig.put("api_key", "my-secret-api-key");
         this.defaultConfig.put("api_base_url", "http://127.0.0.1:5200");
+
+        this.staticConfig.put("version", BuildConstants.VERSION);
         this.load();
     }
 
     public static ConfigManager getInstance() {
-        if (instance == null) instance = new ConfigManager();
-        return instance;
+        if (INSTANCE == null) INSTANCE = new ConfigManager();
+        return INSTANCE;
     }
 
     public String getString(String key) {
@@ -59,6 +62,7 @@ public class ConfigManager {
 
             this.config.clear();
             this.config.putAll(loadedConfig);
+            this.config.putAll(this.staticConfig);
 
             this.logger.info("Config loaded");
         } catch (Exception e) {
@@ -70,6 +74,7 @@ public class ConfigManager {
     public void reset() {
         this.config.clear();
         this.config.putAll(this.defaultConfig);
+        this.config.putAll(this.staticConfig);
 
         this.logger.info("Config reset to default values");
         this.save();

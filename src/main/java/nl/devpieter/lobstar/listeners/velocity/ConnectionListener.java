@@ -17,9 +17,9 @@ import nl.devpieter.lobstar.socket.SocketManager;
 public class ConnectionListener {
 
     private final Lobstar lobstar = Lobstar.getInstance();
-    private final SocketManager socketManager = this.lobstar.getSocketManager();
-    private final ServerManager serverManager = this.lobstar.getServerManager();
-    private final StatusManager statusManager = this.lobstar.getStatusManager();
+    private final SocketManager socketManager = SocketManager.getInstance();
+    private final ServerManager serverManager = ServerManager.getInstance();
+    private final StatusManager statusManager = StatusManager.getInstance();
 
     @Subscribe
     public void onLogin(LoginEvent event) {

@@ -1,5 +1,6 @@
 package nl.devpieter.lobstar.managers;
 
+import nl.devpieter.lobstar.ConfigManager;
 import nl.devpieter.lobstar.api.request.AsyncRequest;
 import nl.devpieter.lobstar.models.whitelist.WhitelistEntry;
 import nl.devpieter.sees.Listener.Listener;
@@ -14,10 +15,20 @@ import java.util.concurrent.CompletableFuture;
 
 public class WhitelistManager implements Listener {
 
+    private static WhitelistManager INSTANCE;
+
     private final ConfigManager configManager = ConfigManager.getInstance();
     private final String apiUrl = this.configManager.getString("api_base_url") + "/api";
 
     private final List<UUID> pendingRequests = new ArrayList<>();
+
+    private WhitelistManager() {
+    }
+
+    public static WhitelistManager getInstance() {
+        if (INSTANCE == null) INSTANCE = new WhitelistManager();
+        return INSTANCE;
+    }
 
     public boolean hasPendingRequest(UUID playerId) {
         return this.pendingRequests.contains(playerId);
@@ -48,7 +59,7 @@ public class WhitelistManager implements Listener {
                     HttpResponse<String> response = simpleGet(uri, true);
 
                     if (response.statusCode() == 404) return null;
-                    if (response.statusCode() != 200) throw new Exception("Failed to get whitelist entry");
+                    if (response.statusCode() != 200) throw new Exception("API returned " + response.statusCode() + ", expected 200 or 404");
 
                     return GSON.fromJson(response.body(), WhitelistEntry.class);
                 } finally {

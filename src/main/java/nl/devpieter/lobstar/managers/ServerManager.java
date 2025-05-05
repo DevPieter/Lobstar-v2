@@ -1,6 +1,5 @@
 package nl.devpieter.lobstar.managers;
 
-import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
@@ -8,8 +7,11 @@ import com.velocitypowered.api.proxy.server.ServerInfo;
 import net.kyori.adventure.text.Component;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.enums.ServerType;
+import nl.devpieter.lobstar.events.server.RegisteredServerDeletedEvent;
+import nl.devpieter.lobstar.events.server.RegisteredServerRegisteredEvent;
+import nl.devpieter.lobstar.events.server.RegisteredServerUpdatedEvent;
+import nl.devpieter.lobstar.events.server.RegisteredServersSyncedEvent;
 import nl.devpieter.lobstar.models.server.Server;
-import nl.devpieter.lobstar.models.whitelist.WhitelistEntry;
 import nl.devpieter.lobstar.socket.events.server.ServerCreatedEvent;
 import nl.devpieter.lobstar.socket.events.server.ServerDeletedEvent;
 import nl.devpieter.lobstar.socket.events.server.ServerUpdatedEvent;
@@ -17,6 +19,7 @@ import nl.devpieter.lobstar.socket.events.server.SyncServersEvent;
 import nl.devpieter.lobstar.utils.ServerUtils;
 import nl.devpieter.sees.Annotations.EventListener;
 import nl.devpieter.sees.Listener.Listener;
+import nl.devpieter.sees.Sees;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -28,18 +31,22 @@ import java.util.UUID;
 
 public class ServerManager implements Listener {
 
+    private static ServerManager INSTANCE;
+
     private final List<Server> servers = new ArrayList<>();
 
-    private final Lobstar lobstar;
-    private final StatusManager statusManager;
-    private final ProxyServer proxy;
-    private final Logger logger;
+    private final Sees sees = Sees.getInstance();
+    private final Lobstar lobstar = Lobstar.getInstance();
 
-    public ServerManager(@NotNull Lobstar lobstar) {
-        this.lobstar = lobstar;
-        this.statusManager = lobstar.getStatusManager();
-        this.proxy = lobstar.getProxy();
-        this.logger = lobstar.getLogger();
+    private final ProxyServer proxy = this.lobstar.getProxy();
+    private final Logger logger = this.lobstar.getLogger();
+
+    private ServerManager() {
+    }
+
+    public static ServerManager getInstance() {
+        if (INSTANCE == null) INSTANCE = new ServerManager();
+        return INSTANCE;
     }
 
     public List<Server> getServers() {
@@ -66,136 +73,50 @@ public class ServerManager implements Listener {
         return this.servers.stream().filter(server -> server.id().equals(serverId)).findFirst().orElse(null);
     }
 
-    public @Nullable Server getServerByVirtualHost(@NotNull String virtualHostString) {
-        return null;
-//        return this.servers.stream().filter(server -> virtualHostString.equals(server.virtualHost())).findFirst().orElse(null);
-    }
-
-    /**
-     * Retrieves an available lobby server for the given player.
-     * <p>
-     * This method prioritizes non-whitelisted servers over whitelisted servers to minimize
-     * the need for whitelist checks. If no suitable server is found, it returns null.
-     *
-     * @param player The player for whom to find an available lobby server.
-     * @return The available lobby server, or null if no suitable server is found.
-     */
-    public @Nullable Server getAvailableLobbyServer(@NotNull Player player) {
-        List<Server> lobbyServers = this.getServers(ServerType.Lobby);
-        if (lobbyServers.isEmpty()) {
-            this.logger.warn("No lobby servers registered");
-            return null;
-        }
-
-        // We prioritize non-whitelisted servers over whitelisted servers to avoid having to check the whitelist for every player
-        for (var server : lobbyServers.stream().filter(s -> !s.isWhitelistEnabled()).toList()) {
-            RegisteredServer registeredServer = server.findRegisteredServer();
-            if (registeredServer == null || !ServerUtils.isOnline(registeredServer)) continue;
-
-            return server;
-        }
-
-        // TODO - Optimize
-        WhitelistManager whitelistManager = this.lobstar.getWhitelistManager();
-
-        for (var server : lobbyServers.stream().filter(Server::isWhitelistEnabled).toList()) {
-            RegisteredServer registeredServer = server.findRegisteredServer();
-            if (registeredServer == null || !ServerUtils.isOnline(registeredServer)) continue;
-
-            try {
-                WhitelistEntry entry = whitelistManager.getWhitelistEntry(server.id(), player.getUniqueId()).join();
-                if (entry == null) {
-                    logger.info("No whitelist entry found for {} on {}", player.getUsername(), server.name());
-                    continue;
-                }
-
-                // TODO - Check ban status
-
-                if (entry.isWhitelisted()) return server;
-            } catch (Exception e) {
-                logger.error("An error occurred while checking whitelist status for {} on {}", player.getUsername(), server.name(), e);
-            }
-        }
-
-        return null;
-    }
-
-    public @Nullable Server tryGetVirtualHostServer(@NotNull Player player) {
-        InetSocketAddress requestedAddress = player.getVirtualHost().orElse(null);
-        if (requestedAddress == null) return null;
-
-        String requestedHost = requestedAddress.getHostString(); // TODO - Add more validation
-        Server server = this.getServerByVirtualHost(requestedHost);
-        if (server == null) {
-            // We log this at info level, since this is player requested
-            this.logger.info("<GVH> {} requested a server with virtual host {}, but no server was found", player.getUsername(), requestedHost);
-            return null;
-        }
-
-        RegisteredServer registeredServer = server.findRegisteredServer();
-        if (registeredServer == null) {
-            this.logger.warn("<GVH> {} requested a server with virtual host {}, but the server is not registered", player.getUsername(), requestedHost);
-            return null;
-        }
-
-        if (!ServerUtils.isOnline(registeredServer)) {
-            this.logger.warn("<GVH> {} requested a server with virtual host {}, but the server is offline", player.getUsername(), requestedHost);
-            return null;
-        }
-
-        // TODO - Check if the player is whitelisted on the server
-        // TODO - Check if the player is banned on the server
-
-        return server;
-    }
-
     @EventListener
     public void onSyncServers(SyncServersEvent event) {
-        this.logger.info("[SyncServersEvent] Syncing servers");
+        this.logger.info("[ServerManager] <Sync> Syncing servers, unregistering first");
 
-        // Unregister all servers
-        this.logger.info("[SyncServersEvent] Unregistering all servers");
         this.servers.clear();
         this.proxy.getAllServers().forEach(server -> this.proxy.unregisterServer(server.getServerInfo()));
 
-        // Register all servers
-        this.logger.info("[SyncServersEvent] Registering all servers");
         event.servers().forEach(this::registerServer);
 
-        this.logger.info("[SyncServersEvent] Synced servers");
-        this.statusManager.syncPlayerStatuses();
+        this.sees.call(new RegisteredServersSyncedEvent());
+        this.logger.info("[ServerManager] <Sync> Successfully synced {} servers", event.servers().size());
     }
 
     @EventListener
     public void onServerCreated(ServerCreatedEvent event) {
+        Server created = event.server();
         Server existingId = this.getServerById(event.serverId());
-        Server existingName = this.getServerByName(event.server().name());
+        Server existingName = this.getServerByName(created.name());
 
         if (existingId != null || existingName != null) {
-            this.logger.warn("[ServerCreatedEvent] Server already exists: {} ({})", event.server().name(), event.serverId());
+            this.logger.warn("[ServerManager] <Create> Tried to register server {}, but a server with the same ID or name already exists!", created.name());
             return;
         }
 
-        this.logger.info("[ServerCreatedEvent] Registering server: {} ({})", event.server().name(), event.serverId());
-        this.registerServer(event.server());
+        this.logger.info("[ServerManager] <Create> Registering server {} with ID {}", created.name(), event.serverId());
+        this.registerServer(created);
     }
 
     @EventListener
     public void onServerUpdated(ServerUpdatedEvent event) {
         Server existing = this.getServerById(event.serverId());
         if (existing == null) {
-            this.logger.warn("[ServerUpdatedEvent] Server not found: {} ({})", event.server().name(), event.serverId());
+            this.logger.warn("[ServerManager] <Update> Tried to update server {}, but it was not found!", event.server().name());
             return;
         }
 
         if (existing.isCriticallyDifferent(event.server())) {
-            this.logger.info("[ServerUpdatedEvent] Critical change detected, re-registering server: {} ({})", event.server().name(), event.serverId());
+            this.logger.info("[ServerManager] <Update> Critical change detected, re-registering server {} with ID {}", event.server().name(), event.serverId());
             ServerUtils.kickAllPlayers(existing, Component.text("Server is restarting, please reconnect."));
 
-            this.unregisterServer(existing);
+            this.unregisterServer(existing, false);
             this.registerServer(event.server());
         } else {
-            this.logger.info("[ServerUpdatedEvent] Non-critical change detected, updating server: {} ({})", event.server().name(), event.serverId());
+            this.logger.info("[ServerManager] <Update> Non-critical change detected, updating server {} with ID {}", event.server().name(), event.serverId());
             this.updateServer(event.serverId(), event.server());
         }
     }
@@ -204,29 +125,34 @@ public class ServerManager implements Listener {
     public void onServerDeleted(ServerDeletedEvent event) {
         Server existing = this.getServerById(event.serverId());
         if (existing == null) {
-            this.logger.warn("[ServerDeletedEvent] Server not found: {}", event.serverId());
+            this.logger.warn("[ServerManager] <Delete> Tried to delete server {}, but it was not found!", event.serverId());
             return;
         }
 
-        this.logger.info("[ServerDeletedEvent] Removing server: {} ({})", existing.name(), event.serverId());
-        ServerUtils.kickAllPlayers(existing, Component.text("Server is shutting down."));
+        this.logger.info("[ServerManager] <Delete> Removing server {} with ID {}", existing.name(), event.serverId());
 
-        this.unregisterServer(existing);
+        ServerUtils.kickAllPlayers(existing, Component.text("Server is shutting down."));
+        this.unregisterServer(existing, true);
     }
 
     private void registerServer(@NotNull Server server) {
         InetSocketAddress address = new InetSocketAddress(server.address(), server.port());
         ServerInfo serverInfo = new ServerInfo(server.name(), address);
 
-        this.proxy.registerServer(serverInfo);
+        RegisteredServer registeredServer = this.proxy.registerServer(serverInfo);
+        if (registeredServer == null) {
+            this.logger.error("[ServerManager] <Register> Tried to register server {}, but something went wrong!", server.name());
+            return;
+        }
+
         this.servers.add(server);
 
-        this.statusManager.setServerStatus(server);
-        this.logger.info("[ServerManager] Registered server: {} ({})", server.name(), server.address());
+        this.sees.call(new RegisteredServerRegisteredEvent(server.id()));
+        this.logger.info("[ServerManager] <Register> Successfully registered server {} with ID {}", server.name(), server.id());
     }
 
     private void updateServer(@NotNull UUID serverId, @NotNull Server server) {
-        Server existingServer = servers.stream().filter(s -> s.id().equals(serverId)).findFirst().orElse(null);
+        Server existingServer = this.getServerById(serverId);
         if (existingServer == null) return;
 
         existingServer.setDisplayName(server.displayName());
@@ -234,18 +160,18 @@ public class ServerManager implements Listener {
         existingServer.setType(server.type());
         existingServer.setWhitelistEnabled(server.isWhitelistEnabled());
 
-        this.statusManager.setServerStatus(existingServer);
-        this.logger.info("[ServerManager] Updated server: {} ({})", existingServer.name(), existingServer.address());
+        this.sees.call(new RegisteredServerUpdatedEvent(serverId));
+        this.logger.info("[ServerManager] <Update> Successfully updated server {} with ID {}", existingServer.name(), serverId);
     }
 
-    private void unregisterServer(@NotNull Server server) {
+    private void unregisterServer(@NotNull Server server, boolean permanently) {
         RegisteredServer registeredServer = server.findRegisteredServer();
         if (registeredServer == null) return;
 
         proxy.unregisterServer(registeredServer.getServerInfo());
         servers.remove(server);
 
-        this.statusManager.clearServerStatus(server);
-        this.logger.info("[ServerManager] Unregistered server: {} ({})", server.name(), server.address());
+        this.sees.call(new RegisteredServerDeletedEvent(server.id(), permanently));
+        this.logger.info("[ServerManager] <Unregister> Successfully unregistered server {} with ID {}", server.name(), server.id());
     }
 }

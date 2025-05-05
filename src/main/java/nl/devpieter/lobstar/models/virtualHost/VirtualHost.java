@@ -1,8 +1,13 @@
 package nl.devpieter.lobstar.models.virtualHost;
 
+import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.enums.HostnameCheckType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class VirtualHost {
 
@@ -12,6 +17,7 @@ public class VirtualHost {
     public final UUID issuerId;
 
     public String hostname;
+    public String normalizedHostname;
 
     public boolean ignoreCase;
     public int checkType;
@@ -26,6 +32,7 @@ public class VirtualHost {
         this.issuerId = issuerId;
 
         this.hostname = hostname;
+        this.normalizedHostname = this.normalize(hostname);
 
         this.ignoreCase = ignoreCase;
         this.checkType = checkType;
@@ -50,15 +57,20 @@ public class VirtualHost {
         return hostname;
     }
 
+    public String normalizedHostname() {
+        return normalizedHostname;
+    }
+
     public void setHostname(String hostname) {
         this.hostname = hostname;
+        this.normalizedHostname = this.normalize(hostname);
     }
 
     public boolean ignoreCase() {
         return ignoreCase;
     }
 
-    public void ignoreCase(boolean ignoreCase) {
+    public void setIgnoreCase(boolean ignoreCase) {
         this.ignoreCase = ignoreCase;
     }
 
@@ -88,5 +100,34 @@ public class VirtualHost {
 
     public void setEnabled(boolean isEnabled) {
         this.isEnabled = isEnabled;
+    }
+
+    public String normalize(@NotNull String hostname) {
+        return hostname.toLowerCase();
+    }
+
+    public boolean compare(@NotNull String hostname) {
+        String toCheck = this.ignoreCase ? this.normalize(hostname) : hostname;
+        String toCompare = this.ignoreCase ? this.normalizedHostname : this.hostname;
+
+        return switch (this.getCheckType()) {
+            case Exact -> toCheck.equals(toCompare);
+            case StartsWith -> toCheck.startsWith(toCompare);
+            case EndsWith -> toCheck.endsWith(toCompare);
+            case Contains -> toCheck.contains(toCompare);
+            case Regex -> this.compareRegex(toCheck, toCompare);
+        };
+    }
+
+    private boolean compareRegex(@NotNull String toCheck, @NotNull String toCompare) {
+        try {
+            Pattern pattern = Pattern.compile(toCompare);
+            Matcher matcher = pattern.matcher(toCheck);
+
+            return matcher.matches();
+        } catch (PatternSyntaxException e) {
+            Lobstar.getInstance().getLogger().error("Invalid regex pattern: {}", toCompare, e);
+            return false;
+        }
     }
 }

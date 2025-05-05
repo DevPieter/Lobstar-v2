@@ -19,7 +19,7 @@ import java.util.UUID;
 public class PlayerMoveListener implements Listener {
 
     private final Lobstar lobstar = Lobstar.getInstance();
-    private final ServerManager serverManager = lobstar.getServerManager();
+    private final ServerManager serverManager = ServerManager.getInstance();
     private final ProxyServer proxy = lobstar.getProxy();
 
     @EventListener

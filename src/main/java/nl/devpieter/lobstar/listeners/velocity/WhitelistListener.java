@@ -12,6 +12,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.enums.ServerType;
+import nl.devpieter.lobstar.helpers.ServerHelper;
 import nl.devpieter.lobstar.managers.ServerManager;
 import nl.devpieter.lobstar.managers.WhitelistManager;
 import nl.devpieter.lobstar.models.server.Server;
@@ -38,8 +39,9 @@ public class WhitelistListener {
     private final Lobstar lobstar = Lobstar.getInstance();
     private final Logger logger = this.lobstar.getLogger();
 
-    private final ServerManager serverManager = this.lobstar.getServerManager();
-    private final WhitelistManager whitelistManager = this.lobstar.getWhitelistManager();
+    private final ServerManager serverManager = ServerManager.getInstance();
+    private final ServerHelper serverHelper = ServerHelper.getInstance();
+    private final WhitelistManager whitelistManager = WhitelistManager.getInstance();
 
     @Subscribe
     public void onLogin(LoginEvent event) {
@@ -47,7 +49,7 @@ public class WhitelistListener {
         this.logger.info("<Global> Checking whitelist status for {}", player.getUsername());
 
         if (this.whitelistManager.hasPendingRequest(player.getUniqueId())) {
-            this.logger.info("<Global> {} has a pending request", player.getUsername());
+            this.logger.warn("<Global> {} has a pending request", player.getUsername());
             event.setResult(ResultedEvent.ComponentResult.denied(this.pendingComponent));
             return;
         }
@@ -101,13 +103,13 @@ public class WhitelistListener {
     }
 
     private @Nullable Server getServerForPlayer(@NotNull Player player) {
-        Server requestedServer = this.serverManager.tryGetVirtualHostServer(player);
+        Server requestedServer = this.serverHelper.tryGetVirtualHostServer(player);
         if (requestedServer != null) {
             this.logger.info("<SFP> Found requested server {} for {}", requestedServer.name(), player.getUsername());
             return requestedServer;
         }
 
-        Server server = this.serverManager.getAvailableLobbyServer(player);
+        Server server = this.serverHelper.getAvailableLobbyServer(player);
         if (server == null) {
             this.logger.warn("<SFP> No lobby server found for {}", player.getUsername());
             return null;
@@ -229,7 +231,7 @@ public class WhitelistListener {
 
         }
 
-        Server server = this.serverManager.getAvailableLobbyServer(event.getPlayer());
+        Server server = this.serverHelper.getAvailableLobbyServer(event.getPlayer());
         if (server == null) {
             this.logger.warn("<KFS> No lobby server found for {}", event.getPlayer().getUsername());
             event.setResult(KickedFromServerEvent.DisconnectPlayer.create(this.noLobby));

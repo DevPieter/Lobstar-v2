@@ -1,5 +1,6 @@
 package nl.devpieter.lobstar.managers;
 
+import nl.devpieter.lobstar.ConfigManager;
 import nl.devpieter.lobstar.api.request.AsyncRequest;
 import nl.devpieter.lobstar.models.version.Version;
 import nl.devpieter.lobstar.models.version.VersionCheckResponse;
@@ -12,6 +13,8 @@ import java.util.function.Consumer;
 
 public class VersionManager {
 
+    private static VersionManager INSTANCE;
+
     private final ConfigManager configManager = ConfigManager.getInstance();
     private final String version = this.configManager.getString("version");
     private final String versionApiUrl = this.configManager.getString("api_base_url") + "/api/version";
@@ -22,8 +25,11 @@ public class VersionManager {
     private @Nullable Version pluginVersion;
     private boolean compatible;
 
+    private VersionManager() {
+    }
+
     public void loadVersionInfo(Consumer<Void> callback) {
-        makeVersionCheckRequest().thenAccept(response -> {
+        this.makeVersionCheckRequest().thenAccept(response -> {
             if (response == null) {
                 this.successfullyLoaded = false;
                 callback.accept(null);
@@ -41,6 +47,11 @@ public class VersionManager {
             callback.accept(null);
             return null;
         });
+    }
+
+    public static VersionManager getInstance() {
+        if (INSTANCE == null) INSTANCE = new VersionManager();
+        return INSTANCE;
     }
 
     public boolean isSuccessfullyLoaded() {
@@ -66,7 +77,7 @@ public class VersionManager {
             @Override
             protected @Nullable VersionCheckResponse requestAsync() throws Exception {
                 HttpResponse<String> response = simpleGet(uri, true);
-                if (response.statusCode() != 200) throw new Exception("Failed to check version");
+                if (response.statusCode() != 200) throw new Exception("API returned " + response.statusCode() + ", expected 200");
 
                 return GSON.fromJson(response.body(), VersionCheckResponse.class);
             }

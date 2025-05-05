@@ -1,7 +1,7 @@
 package nl.devpieter.lobstar.api.request;
 
 import com.google.gson.Gson;
-import nl.devpieter.lobstar.managers.ConfigManager;
+import nl.devpieter.lobstar.ConfigManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
