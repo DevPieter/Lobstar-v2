@@ -6,7 +6,6 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import net.kyori.adventure.text.Component;
 import nl.devpieter.lobstar.Lobstar;
-import nl.devpieter.lobstar.enums.ServerType;
 import nl.devpieter.lobstar.events.server.RegisteredServerDeletedEvent;
 import nl.devpieter.lobstar.events.server.RegisteredServerRegisteredEvent;
 import nl.devpieter.lobstar.events.server.RegisteredServerUpdatedEvent;
@@ -53,10 +52,6 @@ public class ServerManager implements Listener {
         return this.servers;
     }
 
-    public List<Server> getServers(ServerType type) {
-        return this.servers.stream().filter(server -> server.getType() == type).toList();
-    }
-
     public @Nullable Server getServer(@NotNull RegisteredServer registeredServer) {
         return this.getServerByName(registeredServer.getServerInfo().getName());
     }
@@ -65,12 +60,19 @@ public class ServerManager implements Listener {
         return this.getServerByName(serverConnection.getServerInfo().getName());
     }
 
-    public @Nullable Server getServerByName(String name) {
+    public @Nullable Server getServerByName(@Nullable String name) {
+        if (name == null || name.isEmpty()) return null;
         return this.servers.stream().filter(server -> server.name().equals(name)).findFirst().orElse(null);
     }
 
-    public @Nullable Server getServerById(UUID serverId) {
+    public @Nullable Server getServerById(@Nullable UUID serverId) {
+        if (serverId == null) return null;
         return this.servers.stream().filter(server -> server.id().equals(serverId)).findFirst().orElse(null);
+    }
+
+    public @NotNull List<Server> getServersByTypeId(@Nullable UUID typeId) {
+        if (typeId == null) return new ArrayList<>();
+        return this.servers.stream().filter(server -> server.typeId().equals(typeId)).toList();
     }
 
     @EventListener
@@ -157,7 +159,8 @@ public class ServerManager implements Listener {
 
         existingServer.setDisplayName(server.displayName());
 
-        existingServer.setType(server.type());
+        existingServer.setTypeId(server.typeId());
+
         existingServer.setWhitelistEnabled(server.isWhitelistEnabled());
 
         this.sees.call(new RegisteredServerUpdatedEvent(serverId));

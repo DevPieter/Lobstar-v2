@@ -17,6 +17,10 @@ import nl.devpieter.lobstar.listeners.velocity.WhitelistListener;
 import nl.devpieter.lobstar.managers.*;
 import nl.devpieter.lobstar.models.version.Version;
 import nl.devpieter.lobstar.socket.SocketManager;
+import nl.devpieter.lobstar.socket.listeners.motd.MotdCreatedListener;
+import nl.devpieter.lobstar.socket.listeners.motd.MotdDeletedListener;
+import nl.devpieter.lobstar.socket.listeners.motd.MotdUpdatedListener;
+import nl.devpieter.lobstar.socket.listeners.motd.SyncMotdsListener;
 import nl.devpieter.lobstar.socket.listeners.player.KickAllPlayersListener;
 import nl.devpieter.lobstar.socket.listeners.player.KickPlayerListener;
 import nl.devpieter.lobstar.socket.listeners.player.MoveAllPlayersListener;
@@ -25,6 +29,10 @@ import nl.devpieter.lobstar.socket.listeners.server.ServerCreatedListener;
 import nl.devpieter.lobstar.socket.listeners.server.ServerDeletedListener;
 import nl.devpieter.lobstar.socket.listeners.server.ServerUpdatedListener;
 import nl.devpieter.lobstar.socket.listeners.server.SyncServersListener;
+import nl.devpieter.lobstar.socket.listeners.server.type.ServerTypeCreatedListener;
+import nl.devpieter.lobstar.socket.listeners.server.type.ServerTypeDeletedListener;
+import nl.devpieter.lobstar.socket.listeners.server.type.ServerTypeUpdatedListener;
+import nl.devpieter.lobstar.socket.listeners.server.type.SyncServerTypesListener;
 import nl.devpieter.lobstar.socket.listeners.virtualHost.SyncVirtualHostsListener;
 import nl.devpieter.lobstar.socket.listeners.virtualHost.VirtualHostCreatedListener;
 import nl.devpieter.lobstar.socket.listeners.virtualHost.VirtualHostDeletedListener;
@@ -111,6 +119,11 @@ public class Lobstar {
         SocketManager socketManager = SocketManager.getInstance();
         sees.subscribe(socketManager);
 
+        socketManager.addListener(new SyncMotdsListener());
+        socketManager.addListener(new MotdCreatedListener());
+        socketManager.addListener(new MotdUpdatedListener());
+        socketManager.addListener(new MotdDeletedListener());
+
         socketManager.addListener(new KickPlayerListener());
         socketManager.addListener(new KickAllPlayersListener());
         socketManager.addListener(new MovePlayerListener());
@@ -121,10 +134,23 @@ public class Lobstar {
         socketManager.addListener(new ServerUpdatedListener());
         socketManager.addListener(new ServerDeletedListener());
 
+        socketManager.addListener(new SyncServerTypesListener());
+        socketManager.addListener(new ServerTypeCreatedListener());
+        socketManager.addListener(new ServerTypeUpdatedListener());
+        socketManager.addListener(new ServerTypeDeletedListener());
+
         socketManager.addListener(new SyncVirtualHostsListener());
         socketManager.addListener(new VirtualHostCreatedListener());
         socketManager.addListener(new VirtualHostUpdatedListener());
         socketManager.addListener(new VirtualHostDeletedListener());
+
+        this.logger.info("<Init> Initializing Message of the Day (MOTD) manager");
+        MotdManager motdManager = MotdManager.getInstance();
+        sees.subscribe(motdManager);
+
+        this.logger.info("<Init> Initializing server type manager");
+        ServerTypeManager serverTypeManager = ServerTypeManager.getInstance();
+        sees.subscribe(serverTypeManager);
 
         this.logger.info("<Init> Initializing server manager");
         ServerManager serverManager = ServerManager.getInstance();
@@ -171,6 +197,7 @@ public class Lobstar {
         this.logger.info("<Shutdown> Unsubscribing from Sees");
         Sees sees = Sees.getInstance();
         sees.unsubscribe(SocketManager.getInstance());
+        sees.unsubscribe(ServerTypeManager.getInstance());
         sees.unsubscribe(ServerManager.getInstance());
         sees.unsubscribe(VirtualHostManager.getInstance());
         sees.unsubscribe(WhitelistManager.getInstance());

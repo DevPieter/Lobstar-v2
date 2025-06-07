@@ -14,47 +14,62 @@ public class VirtualHost {
 
     private final UUID id;
 
-    private final UUID serverId;
     private final UUID issuerId;
+    private @Nullable UUID serverId;
 
     private String hostname;
-    private @Nullable String normalizedHostname;
+    private String normalizedHostname;
 
-    private boolean ignoreCase;
-    private int checkType;
+    public int priority;
+    public int checkType;
+    public boolean ignoreCase;
 
-    private boolean isDefault;
-    private boolean isEnabled;
+    public boolean isEnabled;
+    public boolean useCustomMotd;
 
-    public VirtualHost(UUID id, UUID serverId, UUID issuerId, String hostname, boolean ignoreCase, int checkType, boolean isDefault, boolean isEnabled) {
+    public @Nullable UUID motdId;
+
+    public VirtualHost(UUID id, UUID issuerId, @Nullable UUID serverId, String hostname, int priority, int checkType, boolean ignoreCase, boolean isEnabled, boolean useCustomMotd, @Nullable UUID motdId) {
         this.id = id;
 
-        this.serverId = serverId;
         this.issuerId = issuerId;
+        this.serverId = serverId;
 
         this.hostname = hostname;
 
-        this.ignoreCase = ignoreCase;
+        this.priority = priority;
         this.checkType = checkType;
+        this.ignoreCase = ignoreCase;
 
-        this.isDefault = isDefault;
         this.isEnabled = isEnabled;
+        this.useCustomMotd = useCustomMotd;
+
+        this.motdId = motdId;
     }
 
     public UUID id() {
         return id;
     }
 
-    public UUID serverId() {
-        return serverId;
-    }
-
     public UUID issuerId() {
         return issuerId;
     }
 
+    public @Nullable UUID serverId() {
+        return serverId;
+    }
+
+    public void setServerId(@Nullable UUID serverId) {
+        this.serverId = serverId;
+    }
+
     public String hostname() {
         return hostname;
+    }
+
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
+        this.normalizedHostname = this.normalize(hostname);
     }
 
     public String normalizedHostname() {
@@ -62,9 +77,24 @@ public class VirtualHost {
         return normalizedHostname;
     }
 
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
-        this.normalizedHostname = this.normalize(hostname);
+    public int priority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public int checkType() {
+        return checkType;
+    }
+
+    public HostnameCheckType getCheckType() {
+        return HostnameCheckType.fromInt(checkType);
+    }
+
+    public void setCheckType(int checkType) {
+        this.checkType = checkType;
     }
 
     public boolean ignoreCase() {
@@ -75,32 +105,28 @@ public class VirtualHost {
         this.ignoreCase = ignoreCase;
     }
 
-    public int checkType() {
-        return checkType;
-    }
-
-    public void setCheckType(int checkType) {
-        this.checkType = checkType;
-    }
-
-    public HostnameCheckType getCheckType() {
-        return HostnameCheckType.fromInt(checkType);
-    }
-
-    public boolean isDefault() {
-        return isDefault;
-    }
-
-    public void setDefault(boolean isDefault) {
-        this.isDefault = isDefault;
-    }
-
     public boolean isEnabled() {
         return isEnabled;
     }
 
-    public void setEnabled(boolean isEnabled) {
-        this.isEnabled = isEnabled;
+    public void setEnabled(boolean enabled) {
+        isEnabled = enabled;
+    }
+
+    public boolean useCustomMotd() {
+        return useCustomMotd;
+    }
+
+    public void setUseCustomMotd(boolean useCustomMotd) {
+        this.useCustomMotd = useCustomMotd;
+    }
+
+    public @Nullable UUID motdId() {
+        return motdId;
+    }
+
+    public void setMotdId(@Nullable UUID motdId) {
+        this.motdId = motdId;
     }
 
     public String normalize(@NotNull String hostname) {

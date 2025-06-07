@@ -93,9 +93,9 @@ public class StatusManager implements Listener {
         if (server == null) return this.clearPlayerStatus(player);
 
         InetSocketAddress socketAddress = player.getRemoteAddress();
-        InetSocketAddress virtualHost = player.getVirtualHost().orElse(null); // TODO - Send virtual host
+        InetSocketAddress virtualHost = player.getVirtualHost().orElse(null); // TODO - Send virtual host?
 
-        this.socketManager.send("SetPlayerStatus", player.getUniqueId(), new PlayerStatus(
+        this.socketManager.send("UpdatePlayerStatus", player.getUniqueId(), new PlayerStatus(
                 player.getUsername(),
 
                 player.getPing(),
@@ -123,7 +123,7 @@ public class StatusManager implements Listener {
         int onlinePlayers = ServerUtils.getPlayerCount(registered);
         int maxPlayers = players != null ? players.getMax() : 0;
 
-        this.socketManager.send("SetServerStatus", server.id(), new ServerStatus(
+        this.socketManager.send("UpdateServerStatus", server.id(), new ServerStatus(
                 true,
 
                 onlinePlayers,

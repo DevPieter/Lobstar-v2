@@ -2,7 +2,6 @@ package nl.devpieter.lobstar.models.server;
 
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import nl.devpieter.lobstar.Lobstar;
-import nl.devpieter.lobstar.enums.ServerType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,25 +10,31 @@ import java.util.UUID;
 public class Server {
 
     private final UUID id;
+
+    private final UUID issuerId;
     private final UUID ownerId;
 
     private final String name;
     private String displayName;
 
-    private int type;
+    private UUID typeId;
+
     private boolean isWhitelistEnabled;
 
     private final String address;
     private final int port;
 
-    public Server(UUID id, UUID ownerId, String name, String displayName, int type, boolean isWhitelistEnabled, String address, int port) {
+    public Server(UUID id, UUID issuerId, UUID ownerId, String name, String displayName, UUID typeId, boolean isWhitelistEnabled, String address, int port) {
         this.id = id;
+
+        this.issuerId = issuerId;
         this.ownerId = ownerId;
 
         this.name = name;
         this.displayName = displayName;
 
-        this.type = type;
+        this.typeId = typeId;
+
         this.isWhitelistEnabled = isWhitelistEnabled;
 
         this.address = address;
@@ -50,6 +55,10 @@ public class Server {
         return id;
     }
 
+    public UUID issuerId() {
+        return issuerId;
+    }
+
     public UUID ownerId() {
         return ownerId;
     }
@@ -66,16 +75,12 @@ public class Server {
         this.displayName = displayName;
     }
 
-    public int type() {
-        return type;
+    public UUID typeId() {
+        return typeId;
     }
 
-    public void setType(int type) {
-        this.type = type;
-    }
-
-    public ServerType getType() {
-        return ServerType.fromInt(type);
+    public void setTypeId(UUID typeId) {
+        this.typeId = typeId;
     }
 
     public boolean isWhitelistEnabled() {

@@ -6,16 +6,23 @@ import com.velocitypowered.api.event.connection.LoginEvent;
 import com.velocitypowered.api.event.player.KickedFromServerEvent;
 import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
 import com.velocitypowered.api.event.player.ServerPreConnectEvent;
+import com.velocitypowered.api.event.proxy.ProxyPingEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import com.velocitypowered.api.proxy.server.ServerPing;
+import com.velocitypowered.api.util.Favicon;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import nl.devpieter.lobstar.Lobstar;
-import nl.devpieter.lobstar.enums.ServerType;
+import nl.devpieter.lobstar.enums.MotdGetType;
 import nl.devpieter.lobstar.helpers.ServerHelper;
-import nl.devpieter.lobstar.managers.ServerManager;
-import nl.devpieter.lobstar.managers.WhitelistManager;
+import nl.devpieter.lobstar.managers.*;
+import nl.devpieter.lobstar.models.common.MotdSamplePlayer;
+import nl.devpieter.lobstar.models.motd.Motd;
 import nl.devpieter.lobstar.models.server.Server;
+import nl.devpieter.lobstar.models.server.type.ServerType;
+import nl.devpieter.lobstar.models.virtualHost.VirtualHost;
 import nl.devpieter.lobstar.models.whitelist.WhitelistEntry;
 import nl.devpieter.lobstar.utils.PlayerUtils;
 import nl.devpieter.lobstar.utils.ServerUtils;
@@ -23,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
+import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 public class WhitelistListener {
@@ -39,9 +48,95 @@ public class WhitelistListener {
     private final Lobstar lobstar = Lobstar.getInstance();
     private final Logger logger = this.lobstar.getLogger();
 
+    private final MotdManager motdManager = MotdManager.getInstance();
+    private final ServerTypeManager serverTypeManager = ServerTypeManager.getInstance();
     private final ServerManager serverManager = ServerManager.getInstance();
     private final ServerHelper serverHelper = ServerHelper.getInstance();
     private final WhitelistManager whitelistManager = WhitelistManager.getInstance();
+
+    @Subscribe
+    public void onProxyPing(ProxyPingEvent event) {
+        InetSocketAddress requestedAddress = event.getConnection().getVirtualHost().orElse(null);
+        if (requestedAddress == null) return;
+
+        VirtualHostManager virtualHostManager = VirtualHostManager.getInstance();
+        VirtualHost virtualHost = virtualHostManager.findMatchingVirtualHost(requestedAddress.getHostString());
+        if (virtualHost == null) return;
+
+        if (virtualHost.motdId() == null) return;
+
+        Motd motd = this.motdManager.getMotdById(virtualHost.motdId());
+        if (motd == null) return;
+
+        ServerPing serverPing = this.serverPingRequired(motd) ? this.getServerPing(virtualHost) : event.getPing();
+        if (serverPing == null) serverPing = event.getPing();
+
+        ServerPing.Builder serverPingBuilder = serverPing.asBuilder();
+        ServerPing.Builder originalBuilder = event.getPing().asBuilder();
+
+        if (!motd.onlinePlayersEnabled()) {
+            originalBuilder.nullPlayers();
+        } else if (motd.getOnlinePlayersGetType() == MotdGetType.Custom) {
+            originalBuilder.onlinePlayers(motd.onlinePlayers());
+        } else if (motd.getOnlinePlayersGetType() == MotdGetType.Server) {
+            originalBuilder.onlinePlayers(serverPingBuilder.getOnlinePlayers());
+        }
+
+        if (motd.getMaximumPlayersGetType() == MotdGetType.Custom) {
+            originalBuilder.maximumPlayers(motd.maximumPlayers());
+        } else if (motd.getMaximumPlayersGetType() == MotdGetType.Server) {
+            originalBuilder.maximumPlayers(serverPingBuilder.getMaximumPlayers());
+        }
+
+        if (!motd.samplePlayersEnabled()) {
+            originalBuilder.clearSamplePlayers();
+        } else if (motd.getSamplePlayersGetType() == MotdGetType.Custom) {
+            MotdSamplePlayer[] samplePlayers = motd.samplePlayers();
+            if (samplePlayers != null) originalBuilder.samplePlayers(MotdSamplePlayer.toServerPingSamplePlayer(samplePlayers));
+        } else if (motd.getSamplePlayersGetType() == MotdGetType.Server) {
+            // TODO - Not working
+            originalBuilder.samplePlayers(serverPingBuilder.getSamplePlayers());
+        }
+
+        if (!motd.descriptionEnabled()) {
+            originalBuilder.description(Component.empty());
+        } else if (motd.getDescriptionGetType() == MotdGetType.Custom) {
+            String description = motd.description();
+            if (description == null) description = "";
+            originalBuilder.description(MiniMessage.miniMessage().deserialize(description));
+        } else if (motd.getDescriptionGetType() == MotdGetType.Server) {
+            serverPingBuilder.getDescriptionComponent().ifPresent(originalBuilder::description);
+        }
+
+        if (!motd.faviconEnabled()) {
+            originalBuilder.favicon(new Favicon(""));
+        } else if (motd.getFaviconGetType() == MotdGetType.Custom) {
+            String favicon = motd.favicon();
+            if (favicon != null) originalBuilder.favicon(new Favicon(favicon));
+        } else if (motd.getFaviconGetType() == MotdGetType.Server) {
+            originalBuilder.favicon(serverPingBuilder.getFavicon().orElse(new Favicon("")));
+        }
+
+        event.setPing(originalBuilder.build());
+    }
+
+    private boolean serverPingRequired(@NotNull Motd motd) {
+        return motd.getOnlinePlayersGetType() == MotdGetType.Server ||
+                motd.getMaximumPlayersGetType() == MotdGetType.Server ||
+                motd.getSamplePlayersGetType() == MotdGetType.Server ||
+                motd.getDescriptionGetType() == MotdGetType.Server ||
+                motd.getFaviconGetType() == MotdGetType.Server;
+    }
+
+    private @Nullable ServerPing getServerPing(@NotNull VirtualHost virtualHost) {
+        Server server = this.serverManager.getServerById(virtualHost.serverId());
+        if (server == null) return null;
+
+        RegisteredServer registeredServer = server.findRegisteredServer();
+        if (registeredServer == null) return null;
+
+        return ServerUtils.getServerPing(registeredServer, Duration.ofMillis(500));
+    }
 
     @Subscribe
     public void onLogin(LoginEvent event) {
@@ -225,10 +320,13 @@ public class WhitelistListener {
         }
 
         Server from = this.serverManager.getServer(event.getServer());
-        if (from != null && from.getType() == ServerType.Lobby) {
-            this.logger.info("<KFS> {} was kicked from a lobby server, not redirecting", event.getPlayer().getUsername());
-            return;
 
+        if (from != null) {
+            ServerType serverType = this.serverTypeManager.getServerTypeById(from.typeId());
+            if (serverType != null && serverType.isLobbyLike()) {
+                this.logger.info("<KFS> {} was kicked from a lobby server, not redirecting", event.getPlayer().getUsername());
+                return;
+            }
         }
 
         Server server = this.serverHelper.getAvailableLobbyServer(event.getPlayer());

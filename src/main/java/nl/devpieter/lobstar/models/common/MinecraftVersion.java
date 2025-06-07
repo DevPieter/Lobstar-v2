@@ -13,4 +13,8 @@ public record MinecraftVersion(int protocol, String name) {
     public static MinecraftVersion of(ServerPing.@NotNull Version version) {
         return new MinecraftVersion(version.getProtocol(), version.getName());
     }
+
+    public ServerPing.Version toServerPingVersion() {
+        return new ServerPing.Version(this.protocol, this.name);
+    }
 }

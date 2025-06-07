@@ -6,7 +6,6 @@ import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import nl.devpieter.lobstar.enums.ServerType;
 import nl.devpieter.lobstar.helpers.ServerHelper;
 import nl.devpieter.lobstar.managers.ServerManager;
 import nl.devpieter.lobstar.models.server.Server;
@@ -29,11 +28,12 @@ public class LobbyCommand {
 
         ServerConnection currentConnection = player.getCurrentServer().orElse(null);
         if (currentConnection != null) {
-            Server currentServer = serverManager.getServer(currentConnection);
-            if (currentServer != null && currentServer.getType() == ServerType.Lobby) {
-                PlayerUtils.sendErrorMessage(player, "You are already in a lobby server!");
-                return 1;
-            }
+            // TODO - Fix
+//            Server currentServer = serverManager.getServer(currentConnection);
+//            if (currentServer != null && currentServer.getType() == ServerType.Lobby) {
+//                PlayerUtils.sendErrorMessage(player, "You are already in a lobby server!");
+//                return 1;
+//            }
         }
 
         Server server = this.serverHelper.getAvailableLobbyServer(player);

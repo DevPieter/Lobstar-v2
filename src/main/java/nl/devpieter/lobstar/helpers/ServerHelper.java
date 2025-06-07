@@ -3,11 +3,12 @@ package nl.devpieter.lobstar.helpers;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import nl.devpieter.lobstar.Lobstar;
-import nl.devpieter.lobstar.enums.ServerType;
 import nl.devpieter.lobstar.managers.ServerManager;
+import nl.devpieter.lobstar.managers.ServerTypeManager;
 import nl.devpieter.lobstar.managers.VirtualHostManager;
 import nl.devpieter.lobstar.managers.WhitelistManager;
 import nl.devpieter.lobstar.models.server.Server;
+import nl.devpieter.lobstar.models.server.type.ServerType;
 import nl.devpieter.lobstar.models.virtualHost.VirtualHost;
 import nl.devpieter.lobstar.models.whitelist.WhitelistEntry;
 import nl.devpieter.lobstar.utils.ServerUtils;
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,6 +25,7 @@ public class ServerHelper {
 
     private static ServerHelper INSTANCE;
 
+    private final ServerTypeManager serverTypeManager = ServerTypeManager.getInstance();
     private final ServerManager serverManager = ServerManager.getInstance();
     private final VirtualHostManager virtualHostManager = VirtualHostManager.getInstance();
     private final WhitelistManager whitelistManager = WhitelistManager.getInstance();
@@ -39,6 +42,25 @@ public class ServerHelper {
     }
 
     /**
+     * Retrieves a list of all servers that are considered "lobby-like".
+     *
+     * @return a list of servers that are of lobby-like types.
+     */
+    public List<Server> getLobbyLikeServers() {
+        List<ServerType> lobbyLikeTypes = this.serverTypeManager.getLobbyLikeServerTypes();
+        List<Server> lobbyLikeServers = new ArrayList<>();
+
+        for (ServerType serverType : lobbyLikeTypes) {
+            List<Server> servers = this.serverManager.getServersByTypeId(serverType.id());
+            if (servers.isEmpty()) continue;
+
+            lobbyLikeServers.addAll(servers);
+        }
+
+        return lobbyLikeServers;
+    }
+
+    /**
      * Retrieves an available lobby server for the given player.
      * <p>
      * This method prioritizes non-whitelisted servers over whitelisted servers to minimize
@@ -49,7 +71,7 @@ public class ServerHelper {
      */
     // TODO - Add proper logging
     public @Nullable Server getAvailableLobbyServer(@NotNull Player player) {
-        List<Server> lobbyServers = this.serverManager.getServers(ServerType.Lobby);
+        List<Server> lobbyServers = this.getLobbyLikeServers();
         if (lobbyServers.isEmpty()) return null;
 
         // We prioritize non-whitelisted servers over whitelisted servers to avoid having to check the whitelist for every player

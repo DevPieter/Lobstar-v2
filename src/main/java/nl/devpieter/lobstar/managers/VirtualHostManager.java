@@ -34,7 +34,11 @@ public class VirtualHostManager implements Listener {
     }
 
     public List<VirtualHost> getVirtualHosts() {
-        return virtualHosts;
+        return this.virtualHosts;
+    }
+
+    public List<VirtualHost> getSortedVirtualHosts() {
+        return this.virtualHosts.stream().sorted((v1, v2) -> Integer.compare(v2.priority(), v1.priority())).toList();
     }
 
     public VirtualHost getVirtualHostById(UUID virtualHostId) {
@@ -42,8 +46,8 @@ public class VirtualHostManager implements Listener {
     }
 
     public @Nullable VirtualHost findMatchingVirtualHost(@NotNull String hostname) {
-        for (VirtualHost virtualHost : this.virtualHosts) {
-            if (!virtualHost.isEnabled() || !virtualHost.compare(hostname)) continue;
+        for (VirtualHost virtualHost : this.getSortedVirtualHosts()) {
+            if (!virtualHost.isEnabled() || !virtualHost.useCustomMotd() || !virtualHost.compare(hostname)) continue;
             return virtualHost;
         }
 
@@ -55,8 +59,11 @@ public class VirtualHostManager implements Listener {
         this.logger.info("[VirtualHostManager] <Sync> Syncing virtual hosts");
         this.virtualHosts.clear();
 
-        List<VirtualHost> enabledVirtualHosts = event.virtualHosts().stream().filter(VirtualHost::isEnabled).toList();
-        this.virtualHosts.addAll(enabledVirtualHosts);
+//        List<VirtualHost> enabledVirtualHosts = event.virtualHosts().stream().filter(VirtualHost::isEnabled).toList();
+//        this.virtualHosts.addAll(enabledVirtualHosts);
+
+        List<VirtualHost> virtualHosts = event.virtualHosts();
+        this.virtualHosts.addAll(virtualHosts);
 
         this.logger.info("[VirtualHostManager] <Sync> Successfully synced {} virtual hosts", this.virtualHosts.size());
     }
@@ -90,11 +97,18 @@ public class VirtualHostManager implements Listener {
 
         VirtualHost updated = event.virtualHost();
 
+        existing.setServerId(updated.serverId());
+
         existing.setHostname(updated.hostname());
-        existing.setIgnoreCase(updated.ignoreCase());
+
+        existing.setPriority(updated.priority());
         existing.setCheckType(updated.checkType());
-        existing.setDefault(updated.isDefault());
-        existing.setEnabled(updated.isEnabled()); // TODO - Should we remove/create the virtual host instead?
+        existing.setIgnoreCase(updated.ignoreCase());
+
+        existing.setEnabled(updated.isEnabled());
+        existing.setUseCustomMotd(updated.useCustomMotd());
+
+        existing.setMotdId(updated.motdId());
 
         this.logger.info("[VirtualHostManager] <Update> Virtual host updated: {} ({})", updated.hostname(), updated.id());
     }
