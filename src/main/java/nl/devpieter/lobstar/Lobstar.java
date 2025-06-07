@@ -13,6 +13,7 @@ import nl.devpieter.lobstar.commands.LobbyCommand;
 import nl.devpieter.lobstar.listeners.sees.PlayerKickListener;
 import nl.devpieter.lobstar.listeners.sees.PlayerMoveListener;
 import nl.devpieter.lobstar.listeners.velocity.ConnectionListener;
+import nl.devpieter.lobstar.listeners.velocity.ProxyPingListener;
 import nl.devpieter.lobstar.listeners.velocity.WhitelistListener;
 import nl.devpieter.lobstar.managers.*;
 import nl.devpieter.lobstar.models.version.Version;
@@ -175,6 +176,7 @@ public class Lobstar {
         this.logger.info("<Init> Registering Velocity listeners");
         EventManager eventManager = this.proxy.getEventManager();
         eventManager.register(this, new ConnectionListener());
+        eventManager.register(this, new ProxyPingListener());
         eventManager.register(this, new WhitelistListener());
 
         this.logger.info("<Init> Registering commands");
