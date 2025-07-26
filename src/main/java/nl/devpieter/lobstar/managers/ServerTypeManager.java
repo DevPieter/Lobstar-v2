@@ -81,6 +81,7 @@ public class ServerTypeManager implements Listener {
         existing.setName(updated.name());
         existing.setDescription(updated.description());
 
+        existing.setActive(updated.isActive());
         existing.setLobbyLike(updated.isLobbyLike());
 
         this.logger.info("[ServerTypeManager] <Update> Server type updated: {} ({})", updated.name(), updated.id());

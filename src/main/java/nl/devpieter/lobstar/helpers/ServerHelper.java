@@ -75,14 +75,14 @@ public class ServerHelper {
         if (lobbyServers.isEmpty()) return null;
 
         // We prioritize non-whitelisted servers over whitelisted servers to avoid having to check the whitelist for every player
-        for (var server : lobbyServers.stream().filter(s -> !s.isWhitelistEnabled()).toList()) {
+        for (var server : lobbyServers.stream().filter(s -> !s.isWhitelistActive()).toList()) {
             RegisteredServer registeredServer = server.findRegisteredServer();
             if (registeredServer == null || !ServerUtils.isOnline(registeredServer)) continue;
 
             return server;
         }
 
-        for (var server : lobbyServers.stream().filter(Server::isWhitelistEnabled).toList()) {
+        for (var server : lobbyServers.stream().filter(Server::isWhitelistActive).toList()) {
             RegisteredServer registeredServer = server.findRegisteredServer();
 
             if (registeredServer == null || !ServerUtils.isOnline(registeredServer)) continue;
@@ -100,7 +100,7 @@ public class ServerHelper {
         if (requestedAddress == null) return null;
 
         String requestedHost = requestedAddress.getHostString(); // TODO - Add more validation
-        VirtualHost virtualHost = this.virtualHostManager.findMatchingVirtualHost(requestedHost);
+        VirtualHost virtualHost = this.virtualHostManager.findMatchingVirtualHost(requestedHost, false);
         if (virtualHost == null) return null;
 
         Server server = this.serverManager.getServerById(virtualHost.serverId());
@@ -117,7 +117,7 @@ public class ServerHelper {
 
     // TODO - Add proper logging
     public boolean isWhitelisted(@NotNull Player player, @NotNull Server server) {
-        if (!server.isWhitelistEnabled()) return true;
+        if (!server.isWhitelistActive()) return true;
 
         if (this.whitelistManager.hasPendingRequest(server.id())) {
             return false;

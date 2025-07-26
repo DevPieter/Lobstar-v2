@@ -19,12 +19,17 @@ public class Server {
 
     private UUID typeId;
 
-    private boolean isWhitelistEnabled;
+    private boolean isListed;
+    private boolean isJoinable;
+    private boolean isWhitelistActive;
+
+    private boolean isUnderMaintenance;
+    private @Nullable String maintenanceMessage;
 
     private final String address;
     private final int port;
 
-    public Server(UUID id, UUID issuerId, UUID ownerId, String name, String displayName, UUID typeId, boolean isWhitelistEnabled, String address, int port) {
+    public Server(UUID id, UUID issuerId, UUID ownerId, String name, String displayName, UUID typeId, boolean isListed, boolean isJoinable, boolean isWhitelistActive, boolean isUnderMaintenance, @Nullable String maintenanceMessage, String address, int port) {
         this.id = id;
 
         this.issuerId = issuerId;
@@ -35,7 +40,12 @@ public class Server {
 
         this.typeId = typeId;
 
-        this.isWhitelistEnabled = isWhitelistEnabled;
+        this.isListed = isListed;
+        this.isJoinable = isJoinable;
+        this.isWhitelistActive = isWhitelistActive;
+
+        this.isUnderMaintenance = isUnderMaintenance;
+        this.maintenanceMessage = maintenanceMessage;
 
         this.address = address;
         this.port = port;
@@ -83,12 +93,44 @@ public class Server {
         this.typeId = typeId;
     }
 
-    public boolean isWhitelistEnabled() {
-        return isWhitelistEnabled;
+    public boolean isListed() {
+        return isListed;
     }
 
-    public void setWhitelistEnabled(boolean whitelistEnabled) {
-        isWhitelistEnabled = whitelistEnabled;
+    public void setListed(boolean listed) {
+        isListed = listed;
+    }
+
+    public boolean isJoinable() {
+        return isJoinable;
+    }
+
+    public void setJoinable(boolean joinable) {
+        isJoinable = joinable;
+    }
+
+    public boolean isWhitelistActive() {
+        return isWhitelistActive;
+    }
+
+    public void setWhitelistActive(boolean whitelistActive) {
+        isWhitelistActive = whitelistActive;
+    }
+
+    public boolean isUnderMaintenance() {
+        return isUnderMaintenance;
+    }
+
+    public void setUnderMaintenance(boolean underMaintenance) {
+        isUnderMaintenance = underMaintenance;
+    }
+
+    public @Nullable String maintenanceMessage() {
+        return maintenanceMessage;
+    }
+
+    public void setMaintenanceMessage(@Nullable String maintenanceMessage) {
+        this.maintenanceMessage = maintenanceMessage;
     }
 
     public String address() {

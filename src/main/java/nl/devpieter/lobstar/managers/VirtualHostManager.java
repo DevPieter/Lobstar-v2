@@ -45,9 +45,11 @@ public class VirtualHostManager implements Listener {
         return this.virtualHosts.stream().filter(virtualHost -> virtualHost.id().equals(virtualHostId)).findFirst().orElse(null);
     }
 
-    public @Nullable VirtualHost findMatchingVirtualHost(@NotNull String hostname) {
+    public @Nullable VirtualHost findMatchingVirtualHost(@NotNull String hostname, boolean checkMotd) {
         for (VirtualHost virtualHost : this.getSortedVirtualHosts()) {
-            if (!virtualHost.isEnabled() || !virtualHost.useCustomMotd() || !virtualHost.compare(hostname)) continue;
+            if (!virtualHost.isEnabled() || !virtualHost.compare(hostname)) continue;
+            if (checkMotd && !virtualHost.useCustomMotd()) continue;
+
             return virtualHost;
         }
 

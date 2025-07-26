@@ -161,7 +161,12 @@ public class ServerManager implements Listener {
 
         existingServer.setTypeId(server.typeId());
 
-        existingServer.setWhitelistEnabled(server.isWhitelistEnabled());
+        existingServer.setListed(server.isListed());
+        existingServer.setJoinable(server.isJoinable());
+        existingServer.setWhitelistActive(server.isWhitelistActive());
+
+        existingServer.setUnderMaintenance(server.isUnderMaintenance());
+        existingServer.setMaintenanceMessage(server.maintenanceMessage());
 
         this.sees.call(new RegisteredServerUpdatedEvent(serverId));
         this.logger.info("[ServerManager] <Update> Successfully updated server {} with ID {}", existingServer.name(), serverId);

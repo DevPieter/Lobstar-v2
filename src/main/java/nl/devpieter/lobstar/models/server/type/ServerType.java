@@ -12,9 +12,10 @@ public class ServerType {
     private String name;
     private String description;
 
+    private boolean isActive;
     private boolean isLobbyLike;
 
-    public ServerType(UUID id, UUID issuerId, UUID ownerId, String name, String description, boolean isLobbyLike) {
+    public ServerType(UUID id, UUID issuerId, UUID ownerId, String name, String description, boolean isActive, boolean isLobbyLike) {
         this.id = id;
 
         this.issuerId = issuerId;
@@ -23,6 +24,7 @@ public class ServerType {
         this.name = name;
         this.description = description;
 
+        this.isActive = isActive;
         this.isLobbyLike = isLobbyLike;
     }
 
@@ -52,6 +54,14 @@ public class ServerType {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
 
     public boolean isLobbyLike() {

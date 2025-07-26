@@ -33,7 +33,7 @@ public class ProxyPingListener {
         InetSocketAddress requestedAddress = event.getConnection().getVirtualHost().orElse(null);
         if (requestedAddress == null) return;
 
-        VirtualHost virtualHost = this.virtualHostManager.findMatchingVirtualHost(requestedAddress.getHostString());
+        VirtualHost virtualHost = this.virtualHostManager.findMatchingVirtualHost(requestedAddress.getHostString(), true);
         if (virtualHost == null || virtualHost.motdId() == null) return;
 
         Motd motd = this.motdManager.getMotdById(virtualHost.motdId());

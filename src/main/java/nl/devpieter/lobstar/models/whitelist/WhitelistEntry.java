@@ -2,6 +2,7 @@ package nl.devpieter.lobstar.models.whitelist;
 
 import org.jetbrains.annotations.Nullable;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record WhitelistEntry(
@@ -11,6 +12,10 @@ public record WhitelistEntry(
         UUID playerId,
         @Nullable UUID serverId,
 
-        boolean isWhitelisted
+        boolean isWhitelisted,
+        boolean isSuperEntry,
+
+        boolean hasExpiration
+//        @Nullable LocalDateTime expirationDate
 ) {
 }

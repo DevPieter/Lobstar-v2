@@ -167,7 +167,7 @@ public class WhitelistListener {
             return;
         }
 
-        if (!server.isWhitelistEnabled()) {
+        if (!server.isWhitelistActive()) {
             this.logger.info("<Server> Server {} does not have its whitelist enabled, allowing {} to join", name, player.getUsername());
 
             PlayerUtils.sendWhisperMessage(player, String.format("Sending you to %s...", server.displayName()));
