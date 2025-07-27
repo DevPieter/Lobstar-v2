@@ -8,7 +8,7 @@ import nl.devpieter.lobstar.managers.ServerTypeManager;
 import nl.devpieter.lobstar.managers.VirtualHostManager;
 import nl.devpieter.lobstar.managers.WhitelistManager;
 import nl.devpieter.lobstar.models.server.Server;
-import nl.devpieter.lobstar.models.server.type.ServerType;
+import nl.devpieter.lobstar.models.serverType.ServerType;
 import nl.devpieter.lobstar.models.virtualHost.VirtualHost;
 import nl.devpieter.lobstar.models.whitelist.WhitelistEntry;
 import nl.devpieter.lobstar.utils.ServerUtils;
@@ -51,7 +51,7 @@ public class ServerHelper {
         List<Server> lobbyLikeServers = new ArrayList<>();
 
         for (ServerType serverType : lobbyLikeTypes) {
-            List<Server> servers = this.serverManager.getServersByTypeId(serverType.id());
+            List<Server> servers = this.serverManager.getServersByTypeId(serverType.getId());
             if (servers.isEmpty()) continue;
 
             lobbyLikeServers.addAll(servers);
@@ -103,7 +103,7 @@ public class ServerHelper {
         VirtualHost virtualHost = this.virtualHostManager.findMatchingVirtualHost(requestedHost, false);
         if (virtualHost == null) return null;
 
-        Server server = this.serverManager.getServerById(virtualHost.serverId());
+        Server server = this.serverManager.getServerById(virtualHost.getServerId());
         if (server == null) return null;
 
         RegisteredServer registeredServer = server.findRegisteredServer();
@@ -119,12 +119,12 @@ public class ServerHelper {
     public boolean isWhitelisted(@NotNull Player player, @NotNull Server server) {
         if (!server.isWhitelistActive()) return true;
 
-        if (this.whitelistManager.hasPendingRequest(server.id())) {
+        if (this.whitelistManager.hasPendingRequest(server.getId())) {
             return false;
         }
 
         try {
-            CompletableFuture<@Nullable WhitelistEntry> future = this.whitelistManager.getWhitelistEntry(server.id(), player.getUniqueId());
+            CompletableFuture<@Nullable WhitelistEntry> future = this.whitelistManager.getWhitelistEntry(server.getId(), player.getUniqueId());
             if (future == null) return false;
 
             WhitelistEntry entry = future.join();
@@ -134,7 +134,7 @@ public class ServerHelper {
 
             return entry.isWhitelisted();
         } catch (Exception e) {
-            this.logger.error("An error occurred while checking whitelist status for {} on {}", player.getUsername(), server.name(), e);
+            this.logger.error("An error occurred while checking whitelist status for {} on {}", player.getUsername(), server.getName(), e);
             return false;
         }
     }

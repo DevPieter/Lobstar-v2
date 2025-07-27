@@ -1,7 +1,7 @@
 package nl.devpieter.lobstar.managers;
 
 import nl.devpieter.lobstar.Lobstar;
-import nl.devpieter.lobstar.models.server.type.ServerType;
+import nl.devpieter.lobstar.models.serverType.ServerType;
 import nl.devpieter.lobstar.socket.events.server.type.ServerTypeCreatedEvent;
 import nl.devpieter.lobstar.socket.events.server.type.ServerTypeDeletedEvent;
 import nl.devpieter.lobstar.socket.events.server.type.ServerTypeUpdatedEvent;
@@ -40,7 +40,7 @@ public class ServerTypeManager implements Listener {
     }
 
     public ServerType getServerTypeById(UUID serverTypeId) {
-        return this.serverTypes.stream().filter(serverType -> serverType.id().equals(serverTypeId)).findFirst().orElse(null);
+        return this.serverTypes.stream().filter(serverType -> serverType.getId().equals(serverTypeId)).findFirst().orElse(null);
     }
 
     @EventListener
@@ -60,31 +60,31 @@ public class ServerTypeManager implements Listener {
         ServerType existingId = this.getServerTypeById(event.serverTypeId());
 
         if (existingId != null) {
-            this.logger.warn("[ServerTypeManager] <Create> Tried to create server type {}, but a server type with the same ID already exists!", created.name());
+            this.logger.warn("[ServerTypeManager] <Create> Tried to create server type {}, but a server type with the same ID already exists!", created.getName());
             return;
         }
 
         this.serverTypes.add(created);
-        this.logger.info("[ServerTypeManager] <Create> Server type created: {} ({})", created.name(), event.serverTypeId());
+        this.logger.info("[ServerTypeManager] <Create> Server type created: {} ({})", created.getName(), event.serverTypeId());
     }
 
     @EventListener
     public void onServerTypeUpdated(ServerTypeUpdatedEvent event) {
         ServerType existing = this.getServerTypeById(event.serverTypeId());
         if (existing == null) {
-            this.logger.warn("[ServerTypeManager] <Update> Tried to update server type {}, but it was not found!", event.serverType().name());
+            this.logger.warn("[ServerTypeManager] <Update> Tried to update server type {}, but it was not found!", event.serverType().getName());
             return;
         }
 
         ServerType updated = event.serverType();
 
-        existing.setName(updated.name());
-        existing.setDescription(updated.description());
+        existing.setName(updated.getName());
+        existing.setDescription(updated.getDescription());
 
         existing.setActive(updated.isActive());
         existing.setLobbyLike(updated.isLobbyLike());
 
-        this.logger.info("[ServerTypeManager] <Update> Server type updated: {} ({})", updated.name(), updated.id());
+        this.logger.info("[ServerTypeManager] <Update> Server type updated: {} ({})", updated.getName(), updated.getId());
     }
 
     @EventListener
@@ -96,6 +96,6 @@ public class ServerTypeManager implements Listener {
         }
 
         this.serverTypes.remove(existing);
-        this.logger.info("[ServerTypeManager] <Delete> Server type deleted: {} ({})", existing.name(), event.serverTypeId());
+        this.logger.info("[ServerTypeManager] <Delete> Server type deleted: {} ({})", existing.getName(), event.serverTypeId());
     }
 }

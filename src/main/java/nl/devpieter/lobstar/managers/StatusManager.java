@@ -104,7 +104,7 @@ public class StatusManager implements Listener {
                 socketAddress.getAddress().getHostAddress(),
                 socketAddress.getPort(),
 
-                server.id(),
+                server.getId(),
                 MinecraftVersion.of(player.getProtocolVersion())
         ));
         return CompletableFuture.completedFuture(null);
@@ -123,7 +123,7 @@ public class StatusManager implements Listener {
         int onlinePlayers = ServerUtils.getPlayerCount(registered);
         int maxPlayers = players != null ? players.getMax() : 0;
 
-        this.socketManager.send("UpdateServerStatus", server.id(), new ServerStatus(
+        this.socketManager.send("UpdateServerStatus", server.getId(), new ServerStatus(
                 true,
 
                 onlinePlayers,
@@ -140,7 +140,7 @@ public class StatusManager implements Listener {
     }
 
     public CompletableFuture<Void> clearServerStatus(@NotNull Server server) {
-        this.socketManager.send("ClearServerStatus", server.id());
+        this.socketManager.send("ClearServerStatus", server.getId());
         return CompletableFuture.completedFuture(null);
     }
 

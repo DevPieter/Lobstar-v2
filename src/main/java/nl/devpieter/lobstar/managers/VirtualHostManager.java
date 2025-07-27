@@ -38,17 +38,17 @@ public class VirtualHostManager implements Listener {
     }
 
     public List<VirtualHost> getSortedVirtualHosts() {
-        return this.virtualHosts.stream().sorted((v1, v2) -> Integer.compare(v2.priority(), v1.priority())).toList();
+        return this.virtualHosts.stream().sorted((v1, v2) -> Integer.compare(v2.getPriority(), v1.getPriority())).toList();
     }
 
     public VirtualHost getVirtualHostById(UUID virtualHostId) {
-        return this.virtualHosts.stream().filter(virtualHost -> virtualHost.id().equals(virtualHostId)).findFirst().orElse(null);
+        return this.virtualHosts.stream().filter(virtualHost -> virtualHost.getId().equals(virtualHostId)).findFirst().orElse(null);
     }
 
     public @Nullable VirtualHost findMatchingVirtualHost(@NotNull String hostname, boolean checkMotd) {
         for (VirtualHost virtualHost : this.getSortedVirtualHosts()) {
             if (!virtualHost.isEnabled() || !virtualHost.compare(hostname)) continue;
-            if (checkMotd && !virtualHost.useCustomMotd()) continue;
+            if (checkMotd && !virtualHost.getUseCustomMotd()) continue;
 
             return virtualHost;
         }
@@ -76,43 +76,43 @@ public class VirtualHostManager implements Listener {
         VirtualHost existingId = this.getVirtualHostById(event.virtualHostId());
 
         if (existingId != null) {
-            this.logger.warn("[VirtualHostManager] <Create> Tried to create virtual host {}, but a virtual host with the same ID already exists!", created.hostname());
+            this.logger.warn("[VirtualHostManager] <Create> Tried to create virtual host {}, but a virtual host with the same ID already exists!", created.getHostname());
             return;
         }
 
         if (!created.isEnabled()) {
-            this.logger.info("[VirtualHostManager] <Create> Tried to create virtual host {}, but it is not enabled, skipping.", created.hostname());
+            this.logger.info("[VirtualHostManager] <Create> Tried to create virtual host {}, but it is not enabled, skipping.", created.getHostname());
             return;
         }
 
         this.virtualHosts.add(event.virtualHost());
-        this.logger.info("[VirtualHostManager] <Create> Virtual host created: {} ({})", created.hostname(), event.virtualHostId());
+        this.logger.info("[VirtualHostManager] <Create> Virtual host created: {} ({})", created.getHostname(), event.virtualHostId());
     }
 
     @EventListener
     public void onVirtualHostUpdated(VirtualHostUpdatedEvent event) {
         VirtualHost existing = this.getVirtualHostById(event.virtualHostId());
         if (existing == null) {
-            this.logger.warn("[VirtualHostManager] <Update> Tried to update virtual host {}, but it was not found!", event.virtualHost().hostname());
+            this.logger.warn("[VirtualHostManager] <Update> Tried to update virtual host {}, but it was not found!", event.virtualHost().getHostname());
             return;
         }
 
         VirtualHost updated = event.virtualHost();
 
-        existing.setServerId(updated.serverId());
+        existing.setServerId(updated.getServerId());
 
-        existing.setHostname(updated.hostname());
+        existing.setHostname(updated.getHostname());
 
-        existing.setPriority(updated.priority());
-        existing.setCheckType(updated.checkType());
-        existing.setIgnoreCase(updated.ignoreCase());
+        existing.setPriority(updated.getPriority());
+        existing.setCheckType(updated.getCheckType());
+        existing.setIgnoreCase(updated.getIgnoreCase());
 
         existing.setEnabled(updated.isEnabled());
-        existing.setUseCustomMotd(updated.useCustomMotd());
+        existing.setUseCustomMotd(updated.getUseCustomMotd());
 
-        existing.setMotdId(updated.motdId());
+        existing.setMotdId(updated.getMotdId());
 
-        this.logger.info("[VirtualHostManager] <Update> Virtual host updated: {} ({})", updated.hostname(), updated.id());
+        this.logger.info("[VirtualHostManager] <Update> Virtual host updated: {} ({})", updated.getHostname(), updated.getId());
     }
 
     @EventListener
@@ -124,6 +124,6 @@ public class VirtualHostManager implements Listener {
         }
 
         this.virtualHosts.remove(existing);
-        this.logger.info("[VirtualHostDeletedEvent] Virtual host deleted: {} ({})", existing.hostname(), existing.id());
+        this.logger.info("[VirtualHostDeletedEvent] Virtual host deleted: {} ({})", existing.getHostname(), existing.getId());
     }
 }

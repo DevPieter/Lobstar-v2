@@ -1,9 +1,8 @@
 package nl.devpieter.lobstar.models.version;
 
-public record Version(
-        String current,
-        String latest,
-        boolean updateAvailable,
-        int severity
-) {
-}
+data class Version(
+    val current: String,
+    val latest: String,
+    val updateAvailable: Boolean,
+    val severity: Int
+)

@@ -32,7 +32,7 @@ public class MotdManager implements Listener {
     }
 
     public Motd getMotdById(UUID motdId) {
-        return this.motds.stream().filter(motd -> motd.id().equals(motdId)).findFirst().orElse(null);
+        return this.motds.stream().filter(motd -> motd.getId().equals(motdId)).findFirst().orElse(null);
     }
 
     @EventListener
@@ -52,48 +52,46 @@ public class MotdManager implements Listener {
         Motd existingId = this.getMotdById(event.motdId());
 
         if (existingId != null) {
-            this.logger.warn("[MotdManager] <Create> Tried to create MOTD {}, but a MOTD with the same ID already exists!", created.name());
+            this.logger.warn("[MotdManager] <Create> Tried to create MOTD {}, but a MOTD with the same ID already exists!", created.getName());
             return;
         }
 
         this.motds.add(created);
-        this.logger.info("[MotdManager] <Create> MOTD created: {} ({})", created.name(), event.motdId());
+        this.logger.info("[MotdManager] <Create> MOTD created: {} ({})", created.getName(), event.motdId());
     }
 
     @EventListener
     public void onMotdUpdated(MotdUpdatedEvent event) {
         Motd existing = this.getMotdById(event.motdId());
         if (existing == null) {
-            this.logger.warn("[MotdManager] <Update> Tried to update MOTD {}, but it was not found!", event.motd().name());
+            this.logger.warn("[MotdManager] <Update> Tried to update MOTD {}, but it was not found!", event.motd().getName());
             return;
         }
 
         Motd updated = event.motd();
 
-        existing.setName(updated.name());
+        existing.setName(updated.getName());
 
-        existing.setOnlinePlayersGetType(updated.onlinePlayersGetType());
-        existing.setOnlinePlayers(updated.onlinePlayers());
-        existing.setOnlinePlayersEnabled(updated.onlinePlayersEnabled());
+        existing.setOnlinePlayersGetType(updated.getOnlinePlayersGetType());
+        existing.setOnlinePlayers(updated.getOnlinePlayers());
+        existing.setOnlinePlayersEnabled(updated.getOnlinePlayersEnabled());
 
-        existing.setMaximumPlayersGetType(updated.maximumPlayersGetType());
-        existing.setMaximumPlayers(updated.maximumPlayers());
+        existing.setMaximumPlayersGetType(updated.getMaximumPlayersGetType());
+        existing.setMaximumPlayers(updated.getMaximumPlayers());
 
-        existing.setSamplePlayersGetType(updated.samplePlayersGetType());
-        existing.setSamplePlayers(updated.samplePlayers());
-        existing.setSamplePlayersEnabled(updated.samplePlayersEnabled());
+        existing.setSamplePlayersGetType(updated.getSamplePlayersGetType());
+        existing.setSamplePlayers(updated.getSamplePlayers());
+        existing.setSamplePlayersEnabled(updated.getSamplePlayersEnabled());
 
-        existing.setDescriptionGetType(updated.descriptionGetType());
-        existing.setDescription(updated.description());
-        existing.setDescriptionEnabled(updated.descriptionEnabled());
+        existing.setDescriptionGetType(updated.getDescriptionGetType());
+        existing.setDescription(updated.getDescription());
+        existing.setDescriptionEnabled(updated.getDescriptionEnabled());
 
-        existing.setFaviconGetType(updated.faviconGetType());
-        existing.setFavicon(updated.favicon());
-        existing.setFaviconEnabled(updated.faviconEnabled());
+        existing.setFaviconGetType(updated.getFaviconGetType());
+        existing.setFavicon(updated.getFavicon());
+        existing.setFaviconEnabled(updated.getFaviconEnabled());
 
-        System.out.println(existing.description());
-
-        this.logger.info("[MotdManager] <Update> MOTD updated: {} ({})", updated.name(), updated.id());
+        this.logger.info("[MotdManager] <Update> MOTD updated: {} ({})", updated.getName(), updated.getId());
     }
 
     @EventListener
@@ -105,6 +103,6 @@ public class MotdManager implements Listener {
         }
 
         this.motds.remove(existing);
-        this.logger.info("[MotdManager] <Delete> MOTD deleted: {} ({})", existing.name(), event.motdId());
+        this.logger.info("[MotdManager] <Delete> MOTD deleted: {} ({})", existing.getName(), event.motdId());
     }
 }

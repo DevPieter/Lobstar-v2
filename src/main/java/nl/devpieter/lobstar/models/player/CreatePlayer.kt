@@ -1,6 +1,8 @@
 package nl.devpieter.lobstar.models.player;
 
-import java.util.UUID;
+import java.util.*
 
-public record CreatePlayer(UUID uuid, String name) {
-}
+data class CreatePlayer(
+    val uuid: UUID,
+    val name: String
+)

@@ -62,17 +62,17 @@ public class ServerManager implements Listener {
 
     public @Nullable Server getServerByName(@Nullable String name) {
         if (name == null || name.isEmpty()) return null;
-        return this.servers.stream().filter(server -> server.name().equals(name)).findFirst().orElse(null);
+        return this.servers.stream().filter(server -> server.getName().equals(name)).findFirst().orElse(null);
     }
 
     public @Nullable Server getServerById(@Nullable UUID serverId) {
         if (serverId == null) return null;
-        return this.servers.stream().filter(server -> server.id().equals(serverId)).findFirst().orElse(null);
+        return this.servers.stream().filter(server -> server.getId().equals(serverId)).findFirst().orElse(null);
     }
 
     public @NotNull List<Server> getServersByTypeId(@Nullable UUID typeId) {
         if (typeId == null) return new ArrayList<>();
-        return this.servers.stream().filter(server -> server.typeId().equals(typeId)).toList();
+        return this.servers.stream().filter(server -> server.getTypeId().equals(typeId)).toList();
     }
 
     @EventListener
@@ -92,14 +92,14 @@ public class ServerManager implements Listener {
     public void onServerCreated(ServerCreatedEvent event) {
         Server created = event.server();
         Server existingId = this.getServerById(event.serverId());
-        Server existingName = this.getServerByName(created.name());
+        Server existingName = this.getServerByName(created.getName());
 
         if (existingId != null || existingName != null) {
-            this.logger.warn("[ServerManager] <Create> Tried to register server {}, but a server with the same ID or name already exists!", created.name());
+            this.logger.warn("[ServerManager] <Create> Tried to register server {}, but a server with the same ID or name already exists!", created.getName());
             return;
         }
 
-        this.logger.info("[ServerManager] <Create> Registering server {} with ID {}", created.name(), event.serverId());
+        this.logger.info("[ServerManager] <Create> Registering server {} with ID {}", created.getName(), event.serverId());
         this.registerServer(created);
     }
 
@@ -107,18 +107,18 @@ public class ServerManager implements Listener {
     public void onServerUpdated(ServerUpdatedEvent event) {
         Server existing = this.getServerById(event.serverId());
         if (existing == null) {
-            this.logger.warn("[ServerManager] <Update> Tried to update server {}, but it was not found!", event.server().name());
+            this.logger.warn("[ServerManager] <Update> Tried to update server {}, but it was not found!", event.server().getName());
             return;
         }
 
         if (existing.isCriticallyDifferent(event.server())) {
-            this.logger.info("[ServerManager] <Update> Critical change detected, re-registering server {} with ID {}", event.server().name(), event.serverId());
+            this.logger.info("[ServerManager] <Update> Critical change detected, re-registering server {} with ID {}", event.server().getName(), event.serverId());
             ServerUtils.kickAllPlayers(existing, Component.text("Server is restarting, please reconnect."));
 
             this.unregisterServer(existing, false);
             this.registerServer(event.server());
         } else {
-            this.logger.info("[ServerManager] <Update> Non-critical change detected, updating server {} with ID {}", event.server().name(), event.serverId());
+            this.logger.info("[ServerManager] <Update> Non-critical change detected, updating server {} with ID {}", event.server().getName(), event.serverId());
             this.updateServer(event.serverId(), event.server());
         }
     }
@@ -131,45 +131,45 @@ public class ServerManager implements Listener {
             return;
         }
 
-        this.logger.info("[ServerManager] <Delete> Removing server {} with ID {}", existing.name(), event.serverId());
+        this.logger.info("[ServerManager] <Delete> Removing server {} with ID {}", existing.getName(), event.serverId());
 
         ServerUtils.kickAllPlayers(existing, Component.text("Server is shutting down."));
         this.unregisterServer(existing, true);
     }
 
     private void registerServer(@NotNull Server server) {
-        InetSocketAddress address = new InetSocketAddress(server.address(), server.port());
-        ServerInfo serverInfo = new ServerInfo(server.name(), address);
+        InetSocketAddress address = new InetSocketAddress(server.getAddress(), server.getPort());
+        ServerInfo serverInfo = new ServerInfo(server.getName(), address);
 
         RegisteredServer registeredServer = this.proxy.registerServer(serverInfo);
         if (registeredServer == null) {
-            this.logger.error("[ServerManager] <Register> Tried to register server {}, but something went wrong!", server.name());
+            this.logger.error("[ServerManager] <Register> Tried to register server {}, but something went wrong!", server.getName());
             return;
         }
 
         this.servers.add(server);
 
-        this.sees.call(new RegisteredServerRegisteredEvent(server.id()));
-        this.logger.info("[ServerManager] <Register> Successfully registered server {} with ID {}", server.name(), server.id());
+        this.sees.call(new RegisteredServerRegisteredEvent(server.getId()));
+        this.logger.info("[ServerManager] <Register> Successfully registered server {} with ID {}", server.getName(), server.getId());
     }
 
     private void updateServer(@NotNull UUID serverId, @NotNull Server server) {
         Server existingServer = this.getServerById(serverId);
         if (existingServer == null) return;
 
-        existingServer.setDisplayName(server.displayName());
+        existingServer.setDisplayName(server.getDisplayName());
 
-        existingServer.setTypeId(server.typeId());
+        existingServer.setTypeId(server.getTypeId());
 
         existingServer.setListed(server.isListed());
         existingServer.setJoinable(server.isJoinable());
         existingServer.setWhitelistActive(server.isWhitelistActive());
 
         existingServer.setUnderMaintenance(server.isUnderMaintenance());
-        existingServer.setMaintenanceMessage(server.maintenanceMessage());
+        existingServer.setMaintenanceMessage(server.getMaintenanceMessage());
 
         this.sees.call(new RegisteredServerUpdatedEvent(serverId));
-        this.logger.info("[ServerManager] <Update> Successfully updated server {} with ID {}", existingServer.name(), serverId);
+        this.logger.info("[ServerManager] <Update> Successfully updated server {} with ID {}", existingServer.getName(), serverId);
     }
 
     private void unregisterServer(@NotNull Server server, boolean permanently) {
@@ -179,7 +179,7 @@ public class ServerManager implements Listener {
         proxy.unregisterServer(registeredServer.getServerInfo());
         servers.remove(server);
 
-        this.sees.call(new RegisteredServerDeletedEvent(server.id(), permanently));
-        this.logger.info("[ServerManager] <Unregister> Successfully unregistered server {} with ID {}", server.name(), server.id());
+        this.sees.call(new RegisteredServerDeletedEvent(server.getId(), permanently));
+        this.logger.info("[ServerManager] <Unregister> Successfully unregistered server {} with ID {}", server.getName(), server.getTypeId());
     }
 }

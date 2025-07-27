@@ -1,19 +1,17 @@
 package nl.devpieter.lobstar.models.player;
 
-import nl.devpieter.lobstar.models.common.MinecraftVersion;
+import nl.devpieter.lobstar.models.common.MinecraftVersion
+import java.util.*
 
-import java.util.UUID;
+data class PlayerStatus(
+    val name: String,
 
-public record PlayerStatus(
-        String name,
+    val ping: Long,
+    val isOnline: Boolean,
 
-        long ping,
-        boolean isOnline,
+    val address: String,
+    val port: Int,
 
-        String address,
-        int port,
-
-        UUID currentServerId,
-        MinecraftVersion version
-) {
-}
+    val currentServerId: UUID,
+    val version: MinecraftVersion
+)

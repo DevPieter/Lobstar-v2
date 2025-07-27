@@ -1,8 +1,7 @@
 package nl.devpieter.lobstar.models.version;
 
-public record VersionCheckResponse(
-        Version api,
-        Version requester,
-        boolean compatible
-) {
-}
+data class VersionCheckResponse(
+    val api: Version,
+    val requester: Version,
+    val compatible: Boolean
+)

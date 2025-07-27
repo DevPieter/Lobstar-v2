@@ -1,21 +1,18 @@
 package nl.devpieter.lobstar.models.whitelist;
 
-import org.jetbrains.annotations.Nullable;
+import java.util.*
 
-import java.time.LocalDateTime;
-import java.util.UUID;
 
-public record WhitelistEntry(
-        UUID id,
-        UUID issuerId,
+data class WhitelistEntry(
+    val id: UUID,
 
-        UUID playerId,
-        @Nullable UUID serverId,
+    val issuerId: UUID,
+    val playerId: UUID,
+    val serverId: UUID?,
 
-        boolean isWhitelisted,
-        boolean isSuperEntry,
+    var isWhitelisted: Boolean,
+    var isSuperEntry: Boolean,
 
-        boolean hasExpiration
-//        @Nullable LocalDateTime expirationDate
-) {
-}
+    var hasExpiration: Boolean,
+    var expirationDate: String? = null
+)

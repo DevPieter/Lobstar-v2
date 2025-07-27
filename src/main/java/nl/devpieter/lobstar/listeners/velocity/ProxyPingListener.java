@@ -34,9 +34,9 @@ public class ProxyPingListener {
         if (requestedAddress == null) return;
 
         VirtualHost virtualHost = this.virtualHostManager.findMatchingVirtualHost(requestedAddress.getHostString(), true);
-        if (virtualHost == null || virtualHost.motdId() == null) return;
+        if (virtualHost == null || virtualHost.getMotdId() == null) return;
 
-        Motd motd = this.motdManager.getMotdById(virtualHost.motdId());
+        Motd motd = this.motdManager.getMotdById(virtualHost.getMotdId());
         if (motd == null) return;
 
         ServerPing serverPing = this.serverPingRequired(motd) ? this.getServerPing(virtualHost) : event.getPing();
@@ -45,46 +45,42 @@ public class ProxyPingListener {
         ServerPing.Builder serverPingBuilder = serverPing.asBuilder();
         ServerPing.Builder originalBuilder = event.getPing().asBuilder();
 
-        if (!motd.onlinePlayersEnabled()) {
+        if (!motd.getOnlinePlayersEnabled()) {
             originalBuilder.nullPlayers();
-        } else if (motd.getOnlinePlayersGetType() == MotdGetType.Custom) {
-            originalBuilder.onlinePlayers(motd.onlinePlayers());
-        } else if (motd.getOnlinePlayersGetType() == MotdGetType.Server) {
+        } else if (motd.getOnlinePlayersType() == MotdGetType.Custom) {
+            originalBuilder.onlinePlayers(motd.getOnlinePlayers());
+        } else if (motd.getOnlinePlayersType() == MotdGetType.Server) {
             originalBuilder.onlinePlayers(serverPingBuilder.getOnlinePlayers());
         }
 
-        if (motd.getMaximumPlayersGetType() == MotdGetType.Custom) {
-            originalBuilder.maximumPlayers(motd.maximumPlayers());
-        } else if (motd.getMaximumPlayersGetType() == MotdGetType.Server) {
+        if (motd.getMaximumPlayersType() == MotdGetType.Custom) {
+            originalBuilder.maximumPlayers(motd.getMaximumPlayers());
+        } else if (motd.getMaximumPlayersType() == MotdGetType.Server) {
             originalBuilder.maximumPlayers(serverPingBuilder.getMaximumPlayers());
         }
 
-        if (!motd.samplePlayersEnabled()) {
+        // TODO - Not working, check why
+        if (!motd.getSamplePlayersEnabled()) {
             originalBuilder.clearSamplePlayers();
-        } else if (motd.getSamplePlayersGetType() == MotdGetType.Custom) {
-            MotdSamplePlayer[] samplePlayers = motd.samplePlayers();
-            if (samplePlayers != null) originalBuilder.samplePlayers(MotdSamplePlayer.toServerPingSamplePlayer(samplePlayers));
-        } else if (motd.getSamplePlayersGetType() == MotdGetType.Server) {
-            // TODO - Not working
+        } else if (motd.getSamplePlayersType() == MotdGetType.Custom) {
+            originalBuilder.samplePlayers(MotdSamplePlayer.toServerPingSamplePlayer(motd.getSamplePlayers()));
+        } else if (motd.getSamplePlayersType() == MotdGetType.Server) {
             originalBuilder.samplePlayers(serverPingBuilder.getSamplePlayers());
         }
 
-        if (!motd.descriptionEnabled()) {
+        if (!motd.getDescriptionEnabled()) {
             originalBuilder.description(Component.empty());
-        } else if (motd.getDescriptionGetType() == MotdGetType.Custom) {
-            String description = motd.description();
-            if (description == null) description = "";
-            originalBuilder.description(MiniMessage.miniMessage().deserialize(description));
-        } else if (motd.getDescriptionGetType() == MotdGetType.Server) {
+        } else if (motd.getDescriptionType() == MotdGetType.Custom) {
+            originalBuilder.description(MiniMessage.miniMessage().deserialize(motd.getDescription()));
+        } else if (motd.getDescriptionType() == MotdGetType.Server) {
             serverPingBuilder.getDescriptionComponent().ifPresent(originalBuilder::description);
         }
 
-        if (!motd.faviconEnabled()) {
+        if (!motd.getFaviconEnabled()) {
             originalBuilder.favicon(new Favicon(""));
-        } else if (motd.getFaviconGetType() == MotdGetType.Custom) {
-            String favicon = motd.favicon();
-            if (favicon != null) originalBuilder.favicon(new Favicon(favicon));
-        } else if (motd.getFaviconGetType() == MotdGetType.Server) {
+        } else if (motd.getFaviconType() == MotdGetType.Custom) {
+            originalBuilder.favicon(new Favicon(motd.getFavicon()));
+        } else if (motd.getFaviconType() == MotdGetType.Server) {
             originalBuilder.favicon(serverPingBuilder.getFavicon().orElse(new Favicon("")));
         }
 
@@ -92,15 +88,15 @@ public class ProxyPingListener {
     }
 
     private boolean serverPingRequired(@NotNull Motd motd) {
-        return motd.getOnlinePlayersGetType() == MotdGetType.Server ||
-                motd.getMaximumPlayersGetType() == MotdGetType.Server ||
-                motd.getSamplePlayersGetType() == MotdGetType.Server ||
-                motd.getDescriptionGetType() == MotdGetType.Server ||
-                motd.getFaviconGetType() == MotdGetType.Server;
+        return motd.getOnlinePlayersType() == MotdGetType.Server ||
+                motd.getMaximumPlayersType() == MotdGetType.Server ||
+                motd.getSamplePlayersType() == MotdGetType.Server ||
+                motd.getDescriptionType() == MotdGetType.Server ||
+                motd.getFaviconType() == MotdGetType.Server;
     }
 
     private @Nullable ServerPing getServerPing(@NotNull VirtualHost virtualHost) {
-        Server server = this.serverManager.getServerById(virtualHost.serverId());
+        Server server = this.serverManager.getServerById(virtualHost.getServerId());
         if (server == null) return null;
 
         RegisteredServer registeredServer = server.findRegisteredServer();

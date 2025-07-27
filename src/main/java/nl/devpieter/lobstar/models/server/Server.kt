@@ -1,143 +1,35 @@
 package nl.devpieter.lobstar.models.server;
 
-import com.velocitypowered.api.proxy.server.RegisteredServer;
-import nl.devpieter.lobstar.Lobstar;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import com.velocitypowered.api.proxy.server.RegisteredServer
+import nl.devpieter.lobstar.Lobstar
+import java.util.*
 
-import java.util.UUID;
+data class Server(
+    val id: UUID,
 
-public class Server {
+    val issuerId: UUID,
+    val ownerId: UUID,
 
-    private final UUID id;
+    val name: String,
+    var displayName: String,
 
-    private final UUID issuerId;
-    private final UUID ownerId;
+    var typeId: UUID,
 
-    private final String name;
-    private String displayName;
+    var isListed: Boolean,
+    var isJoinable: Boolean,
+    var isWhitelistActive: Boolean,
 
-    private UUID typeId;
+    var isUnderMaintenance: Boolean,
+    var maintenanceMessage: String?, // TODO - Make this non-nullable when API is updated
 
-    private boolean isListed;
-    private boolean isJoinable;
-    private boolean isWhitelistActive;
-
-    private boolean isUnderMaintenance;
-    private @Nullable String maintenanceMessage;
-
-    private final String address;
-    private final int port;
-
-    public Server(UUID id, UUID issuerId, UUID ownerId, String name, String displayName, UUID typeId, boolean isListed, boolean isJoinable, boolean isWhitelistActive, boolean isUnderMaintenance, @Nullable String maintenanceMessage, String address, int port) {
-        this.id = id;
-
-        this.issuerId = issuerId;
-        this.ownerId = ownerId;
-
-        this.name = name;
-        this.displayName = displayName;
-
-        this.typeId = typeId;
-
-        this.isListed = isListed;
-        this.isJoinable = isJoinable;
-        this.isWhitelistActive = isWhitelistActive;
-
-        this.isUnderMaintenance = isUnderMaintenance;
-        this.maintenanceMessage = maintenanceMessage;
-
-        this.address = address;
-        this.port = port;
+    val address: String,
+    val port: Int
+) {
+    fun findRegisteredServer(): RegisteredServer? {
+        return Lobstar.getInstance().proxy.getServer(this.name).orElse(null)
     }
 
-    public @Nullable RegisteredServer findRegisteredServer() {
-        return Lobstar.getInstance().getProxy().getServer(this.name()).orElse(null);
-    }
-
-    public boolean isCriticallyDifferent(@NotNull Server server) {
-        return !server.name().equals(this.name) ||
-                !server.address().equals(this.address) ||
-                server.port() != this.port;
-    }
-
-    public UUID id() {
-        return id;
-    }
-
-    public UUID issuerId() {
-        return issuerId;
-    }
-
-    public UUID ownerId() {
-        return ownerId;
-    }
-
-    public String name() {
-        return name;
-    }
-
-    public String displayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public UUID typeId() {
-        return typeId;
-    }
-
-    public void setTypeId(UUID typeId) {
-        this.typeId = typeId;
-    }
-
-    public boolean isListed() {
-        return isListed;
-    }
-
-    public void setListed(boolean listed) {
-        isListed = listed;
-    }
-
-    public boolean isJoinable() {
-        return isJoinable;
-    }
-
-    public void setJoinable(boolean joinable) {
-        isJoinable = joinable;
-    }
-
-    public boolean isWhitelistActive() {
-        return isWhitelistActive;
-    }
-
-    public void setWhitelistActive(boolean whitelistActive) {
-        isWhitelistActive = whitelistActive;
-    }
-
-    public boolean isUnderMaintenance() {
-        return isUnderMaintenance;
-    }
-
-    public void setUnderMaintenance(boolean underMaintenance) {
-        isUnderMaintenance = underMaintenance;
-    }
-
-    public @Nullable String maintenanceMessage() {
-        return maintenanceMessage;
-    }
-
-    public void setMaintenanceMessage(@Nullable String maintenanceMessage) {
-        this.maintenanceMessage = maintenanceMessage;
-    }
-
-    public String address() {
-        return address;
-    }
-
-    public int port() {
-        return port;
+    fun isCriticallyDifferent(other: Server): Boolean {
+        return other.name != this.name || other.address != this.address || other.port != this.port
     }
 }

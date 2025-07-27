@@ -2,12 +2,11 @@ package nl.devpieter.lobstar.models.server;
 
 import nl.devpieter.lobstar.models.common.MinecraftVersion;
 
-public record ServerStatus(
-        boolean isOnline,
+data class ServerStatus(
+    val isOnline: Boolean,
 
-        int onlinePlayers,
-        int maxPlayers,
+    val onlinePlayers: Int,
+    val maxPlayers: Int,
 
-        MinecraftVersion version
-) {
-}
+    val version: MinecraftVersion
+)
