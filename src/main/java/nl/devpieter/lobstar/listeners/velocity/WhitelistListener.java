@@ -12,19 +12,17 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.helpers.ServerHelper;
+import nl.devpieter.lobstar.helpers.WhitelistHelper;
 import nl.devpieter.lobstar.managers.ServerManager;
 import nl.devpieter.lobstar.managers.ServerTypeManager;
 import nl.devpieter.lobstar.managers.WhitelistManager;
 import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.models.serverType.ServerType;
-import nl.devpieter.lobstar.models.whitelist.WhitelistEntry;
 import nl.devpieter.lobstar.utils.PlayerUtils;
 import nl.devpieter.lobstar.utils.ServerUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-
-import java.util.concurrent.CompletableFuture;
 
 public class WhitelistListener {
 
@@ -43,45 +41,28 @@ public class WhitelistListener {
     private final ServerManager serverManager = ServerManager.getInstance();
     private final ServerTypeManager serverTypeManager = ServerTypeManager.getInstance();
     private final WhitelistManager whitelistManager = WhitelistManager.getInstance();
+
     private final ServerHelper serverHelper = ServerHelper.getInstance();
+    private final WhitelistHelper whitelistHelper = WhitelistHelper.getInstance();
 
     @Subscribe
     public void onLogin(LoginEvent event) {
         Player player = event.getPlayer();
         this.logger.info("<Global> Checking whitelist status for {}", player.getUsername());
 
-        if (this.whitelistManager.hasPendingRequest(player.getUniqueId())) {
-            this.logger.warn("<Global> {} has a pending request", player.getUsername());
-            event.setResult(ResultedEvent.ComponentResult.denied(this.pendingComponent));
+//        if (this.whitelistManager.hasPendingRequest(player.getUniqueId())) {
+//            this.logger.warn("<Global> {} has a pending request", player.getUsername());
+//            event.setResult(ResultedEvent.ComponentResult.denied(this.pendingComponent));
+//            return;
+//        }
+
+        if (!this.whitelistHelper.canJoinGlobal(player)) {
+            this.logger.info("<Global> {} tried to join but is not whitelisted", player.getUsername());
+            event.setResult(ResultedEvent.ComponentResult.denied(this.denied));
             return;
         }
 
-        try {
-            CompletableFuture<@Nullable WhitelistEntry> future = this.whitelistManager.getWhitelistEntry(player.getUniqueId());
-            if (future == null) {
-                // Null if still pending, we should never get here
-                this.logger.error("<Global> {} has a null future, this should never happen", player.getUsername());
-                event.setResult(ResultedEvent.ComponentResult.denied(this.error));
-                return;
-            }
-
-            WhitelistEntry entry = future.join();
-            if (entry == null) {
-                this.logger.info("<Global> {} tried to join but no whitelist entry found", player.getUsername());
-                event.setResult(ResultedEvent.ComponentResult.denied(this.denied));
-                return;
-            }
-
-            // TODO - Check ban status
-
-            if (!entry.isWhitelisted()) {
-                this.logger.info("<Global> {} tried to join but is not whitelisted", player.getUsername());
-                event.setResult(ResultedEvent.ComponentResult.denied(this.denied));
-            }
-        } catch (Exception e) {
-            this.logger.error("<Global> An error occurred while checking whitelist status for {}", player.getUsername(), e);
-            event.setResult(ResultedEvent.ComponentResult.denied(this.error));
-        }
+        this.logger.info("<Global> {} is whitelisted, allowing to join", player.getUsername());
     }
 
     @Subscribe
@@ -105,7 +86,7 @@ public class WhitelistListener {
     }
 
     private @Nullable Server getServerForPlayer(@NotNull Player player) {
-        Server requestedServer = this.serverHelper.tryGetVirtualHostServer(player);
+        Server requestedServer = this.serverHelper.tryGetPlayerRequestedServer(player);
         if (requestedServer != null) {
             this.logger.info("<SFP> Found requested server {} for {}", requestedServer.getName(), player.getUsername());
             return requestedServer;
@@ -130,13 +111,13 @@ public class WhitelistListener {
         Player player = event.getPlayer();
         String name = event.getOriginalServer().getServerInfo().getName();
 
-        if (this.whitelistManager.hasPendingRequest(player.getUniqueId())) {
-            this.logger.info("<Server> {} has a pending request", player.getUsername());
-
-            PlayerUtils.sendErrorMessage(player, this.pending);
-            event.setResult(ServerPreConnectEvent.ServerResult.denied());
-            return;
-        }
+//        if (this.whitelistManager.hasPendingRequest(player.getUniqueId())) {
+//            this.logger.info("<Server> {} has a pending request", player.getUsername());
+//
+//            PlayerUtils.sendErrorMessage(player, this.pending);
+//            event.setResult(ServerPreConnectEvent.ServerResult.denied());
+//            return;
+//        }
 
         Server server = this.serverManager.getServerByName(name);
         if (server == null) {
@@ -167,54 +148,17 @@ public class WhitelistListener {
             return;
         }
 
-        if (!server.isWhitelistActive()) {
-            this.logger.info("<Server> Server {} does not have its whitelist enabled, allowing {} to join", name, player.getUsername());
+        if (!this.whitelistHelper.canJoinServer(player, server)) {
+            this.logger.info("<Server> {} tried to join {} but is not whitelisted", player.getUsername(), server.getName());
 
-            PlayerUtils.sendWhisperMessage(player, String.format("Sending you to %s...", server.getDisplayName()));
-            event.setResult(ServerPreConnectEvent.ServerResult.allowed(registeredServer));
+            PlayerUtils.sendErrorMessage(player, this.denied);
+            event.setResult(ServerPreConnectEvent.ServerResult.denied());
             return;
         }
 
-        try {
-            CompletableFuture<@Nullable WhitelistEntry> future = this.whitelistManager.getWhitelistEntry(server.getId(), player.getUniqueId());
-            if (future == null) {
-                // Null if still pending, we should never get here
-                this.logger.error("<Server> {} has a null future, this should never happen", player.getUsername());
-
-                PlayerUtils.sendErrorMessage(player, "An error occurred while checking your whitelist status, please try again later!");
-                event.setResult(ServerPreConnectEvent.ServerResult.denied());
-                return;
-            }
-
-            WhitelistEntry entry = future.join();
-            if (entry == null) {
-                this.logger.info("<Server> {} tried to join {} but no whitelist entry found", player.getUsername(), server.getName());
-
-                player.sendMessage(this.error);
-                event.setResult(ServerPreConnectEvent.ServerResult.denied());
-                return;
-            }
-
-            // TODO - Check ban status
-
-            if (!entry.isWhitelisted()) {
-                this.logger.info("<Server> {} tried to join {} but is not whitelisted", player.getUsername(), server.getName());
-
-                player.sendMessage(this.denied);
-                event.setResult(ServerPreConnectEvent.ServerResult.denied());
-                return;
-            }
-
-            this.logger.info("<Server> Allowing {} to join {}", player.getUsername(), server.getName());
-
-            PlayerUtils.sendWhisperMessage(player, String.format("Sending you to %s...", server.getDisplayName()));
-            event.setResult(ServerPreConnectEvent.ServerResult.allowed(registeredServer));
-        } catch (Exception e) {
-            this.logger.error("<Server> An error occurred while checking whitelist status for {} on {}", player.getUsername(), server.getName(), e);
-
-            player.sendMessage(this.error);
-            event.setResult(ServerPreConnectEvent.ServerResult.denied());
-        }
+        this.logger.info("<Server> Allowing {} to join {}", player.getUsername(), server.getName());
+        PlayerUtils.sendWhisperMessage(player, String.format("Sending you to %s...", server.getDisplayName()));
+        event.setResult(ServerPreConnectEvent.ServerResult.allowed(registeredServer));
     }
 
     @Subscribe

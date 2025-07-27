@@ -23,6 +23,10 @@ public class PlayerUtils {
         player.sendMessage(Component.text(message).color(TextColor.color(0xfe3f3f)));
     }
 
+    public static void sendErrorMessage(@NotNull Player player, Component message) {
+        player.sendMessage(message.color(TextColor.color(0xfe3f3f)));
+    }
+
     public static void sendWhisperMessage(@NotNull Player player, String message) {
         player.sendMessage(Component.text(message).color(TextColor.color(0x3f3f3f)));
     }

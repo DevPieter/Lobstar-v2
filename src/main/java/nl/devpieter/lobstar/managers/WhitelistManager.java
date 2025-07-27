@@ -1,26 +1,31 @@
 package nl.devpieter.lobstar.managers;
 
-import nl.devpieter.lobstar.ConfigManager;
-import nl.devpieter.lobstar.api.request.AsyncRequest;
+import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.models.whitelist.WhitelistEntry;
+import nl.devpieter.lobstar.socket.events.whitelist.SyncWhitelistEntriesEvent;
+import nl.devpieter.lobstar.socket.events.whitelist.WhitelistEntryCreatedEvent;
+import nl.devpieter.lobstar.socket.events.whitelist.WhitelistEntryDeletedEvent;
+import nl.devpieter.lobstar.socket.events.whitelist.WhitelistEntryUpdatedEvent;
+import nl.devpieter.sees.Annotations.EventListener;
 import nl.devpieter.sees.Listener.Listener;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
-import java.net.URI;
-import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public class WhitelistManager implements Listener {
 
     private static WhitelistManager INSTANCE;
 
-    private final ConfigManager configManager = ConfigManager.getInstance();
-    private final String apiUrl = this.configManager.getString("api_base_url") + "/api";
+    // Although the WhitelistEntries are normally not stored separately, we do it here for faster lookups.
+    private final HashMap<UUID, WhitelistEntry> entryIndex = new HashMap<>(); // [entryId] -> WhitelistEntry
+    private final HashMap<UUID, WhitelistEntry> globalEntries = new HashMap<>(); // [playerId] -> WhitelistEntry
+    private final HashMap<UUID, HashMap<UUID, WhitelistEntry>> serverEntries = new HashMap<>(); // [serverId] -> [playerId] -> WhitelistEntry
 
-    private final List<UUID> pendingRequests = new ArrayList<>();
+    private final Lobstar lobstar = Lobstar.getInstance();
+    private final Logger logger = this.lobstar.getLogger();
 
     private WhitelistManager() {
     }
@@ -30,42 +35,96 @@ public class WhitelistManager implements Listener {
         return INSTANCE;
     }
 
-    public boolean hasPendingRequest(UUID playerId) {
-        return this.pendingRequests.contains(playerId);
+    public @Nullable WhitelistEntry getEntryById(UUID entryId) {
+        return this.entryIndex.get(entryId);
     }
 
-    public @Nullable CompletableFuture<@Nullable WhitelistEntry> getWhitelistEntry(UUID playerId) {
-        if (this.hasPendingRequest(playerId)) return null;
-        this.pendingRequests.add(playerId);
-
-        URI uri = URI.create(String.format("%s/player/%s/whitelist", this.apiUrl, playerId));
-        return this.getWhitelistEntry(playerId, uri);
+    public @Nullable WhitelistEntry getGlobalEntry(UUID playerId) {
+        return this.globalEntries.get(playerId);
     }
 
-    public @Nullable CompletableFuture<@Nullable WhitelistEntry> getWhitelistEntry(UUID serverId, UUID playerId) {
-        if (this.hasPendingRequest(playerId)) return null;
-        this.pendingRequests.add(playerId);
+    public @Nullable WhitelistEntry getServerEntry(UUID serverId, UUID playerId) {
+        Map<UUID, WhitelistEntry> entries = this.serverEntries.get(serverId);
+        if (entries == null) return null;
 
-        URI uri = URI.create(String.format("%s/server/%s/whitelist/%s", this.apiUrl, serverId, playerId));
-        return this.getWhitelistEntry(playerId, uri);
+        return entries.get(playerId);
     }
 
-    private CompletableFuture<@Nullable WhitelistEntry> getWhitelistEntry(UUID playerId, URI uri) {
-        return new AsyncRequest<WhitelistEntry>() {
+    @EventListener
+    public void onSyncWhitelist(SyncWhitelistEntriesEvent event) {
+        this.logger.info("[WhitelistManager] <Sync> Syncing whitelist");
 
-            @Override
-            protected @Nullable WhitelistEntry requestAsync() throws Exception {
-                try {
-                    HttpResponse<String> response = simpleGet(uri, true);
+        this.entryIndex.clear();
+        this.globalEntries.clear();
+        this.serverEntries.clear();
 
-                    if (response.statusCode() == 404) return null;
-                    if (response.statusCode() != 200) throw new Exception("API returned " + response.statusCode() + ", expected 200 or 404");
+        for (WhitelistEntry entry : event.entries()) {
+            this.entryIndex.put(entry.getId(), entry);
 
-                    return GSON.fromJson(response.body(), WhitelistEntry.class);
-                } finally {
-                    pendingRequests.remove(playerId);
-                }
-            }
-        }.execute().getFuture();
+            if (entry.getServerId() == null) this.globalEntries.put(entry.getPlayerId(), entry);
+            else this.serverEntries.computeIfAbsent(entry.getServerId(), k -> new HashMap<>()).put(entry.getPlayerId(), entry);
+        }
+
+        this.logger.info("[WhitelistManager] <Sync> Whitelist synced, {} global entries, {} server entries", this.globalEntries.size(), this.serverEntries.size());
+    }
+
+    @EventListener
+    public void onWhitelistEntryCreated(WhitelistEntryCreatedEvent event) {
+        WhitelistEntry created = event.entry();
+        WhitelistEntry existingId = this.getEntryById(created.getId());
+
+        if (existingId != null) {
+            this.logger.warn("[WhitelistManager] <Create> Tried to create whitelist entry for player {}, but an entry with the same ID already exists!", created.getPlayerId());
+            return;
+        }
+
+        this.entryIndex.put(created.getId(), created);
+
+        if (created.getServerId() == null) {
+            this.globalEntries.put(created.getPlayerId(), created);
+            this.logger.info("[WhitelistManager] <Create> Global whitelist entry created for player {} ({})", created.getPlayerId(), created.getId());
+        } else {
+            this.serverEntries.computeIfAbsent(created.getServerId(), k -> new HashMap<>()).put(created.getPlayerId(), created);
+            this.logger.info("[WhitelistManager] <Create> Server whitelist entry created for player {} on server {} ({})", created.getPlayerId(), created.getServerId(), created.getId());
+        }
+    }
+
+    @EventListener
+    public void onWhitelistEntryUpdated(WhitelistEntryUpdatedEvent event) {
+        WhitelistEntry existing = this.getEntryById(event.entryId());
+        if (existing == null) {
+            this.logger.warn("[WhitelistManager] <Update> Tried to update whitelist entry for player {}, but it was not found!", event.entry().getPlayerId());
+            return;
+        }
+
+        WhitelistEntry updated = event.entry();
+
+        existing.setWhitelisted(updated.isWhitelisted());
+        existing.setSuperEntry(updated.isSuperEntry());
+
+        existing.setHasExpiration(updated.getHasExpiration());
+        existing.setExpirationDate(updated.getExpirationDate());
+
+        this.logger.info("[WhitelistManager] <Update> Whitelist entry updated for player {} ({})", updated.getPlayerId(), updated.getId());
+    }
+
+    @EventListener
+    public void onWhitelistEntryDeleted(WhitelistEntryDeletedEvent event) {
+        WhitelistEntry existing = this.getEntryById(event.entryId());
+        if (existing == null) {
+            this.logger.warn("[WhitelistManager] <Delete> Tried to delete whitelist entry {}, but it was not found!", event.entryId());
+            return;
+        }
+
+        this.entryIndex.remove(existing.getId());
+
+        if (existing.getServerId() == null) {
+            this.globalEntries.remove(existing.getPlayerId());
+        } else {
+            Map<UUID, WhitelistEntry> entries = this.serverEntries.get(existing.getServerId());
+            if (entries != null) entries.remove(existing.getPlayerId());
+        }
+
+        this.logger.info("[WhitelistManager] <Delete> Whitelist entry deleted for player {} ({})", existing.getPlayerId(), existing.getId());
     }
 }
