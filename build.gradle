@@ -3,14 +3,15 @@ plugins {
     id 'eclipse'
     id 'org.jetbrains.gradle.plugin.idea-ext' version '1.1.8'
     id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'org.jetbrains.kotlin.jvm'
 }
 
 group = 'nl.devpieter'
 version = '2.0.0'
 
-//jar {
-//    destinationDirectory = file("C:\\Users\\devpi\\Desktop\\test_server\\Velocity Lobbies Setup\\velocity\\plugins")
-//}
+jar {
+    destinationDirectory = file("C:\\Users\\devpi\\Desktop\\test_server\\Velocity Lobbies Setup\\velocity\\plugins")
+}
 
 repositories {
     mavenCentral()
@@ -37,6 +38,9 @@ dependencies {
 
     // Sees
     implementation("nl.devpieter:sees:1.1.0")
+
+    // Kotlin Standard Library
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
 }
 
 def targetJavaVersion = 21
@@ -67,7 +71,10 @@ project.eclipse.synchronizationTasks(generateTemplates)
 
 shadowJar {
     archiveClassifier.set('')
-//    destinationDirectory = file("C:\\Users\\devpi\\Desktop\\test_server\\Velocity Lobbies Setup\\velocity\\plugins")
+    destinationDirectory = file("C:\\Users\\devpi\\Desktop\\test_server\\Velocity Lobbies Setup\\velocity\\plugins")
 }
 
 build.dependsOn shadowJar
+kotlin {
+    jvmToolchain(21)
+}

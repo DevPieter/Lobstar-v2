@@ -1,39 +1,60 @@
-.idea/**/workspace.xml
-.idea/**/tasks.xml
-.idea/**/usage.statistics.xml
-.idea/**/dictionaries
-.idea/**/shelf
-.idea/**/aws.xml
-.idea/**/contentModel.xml
-.idea/**/dataSources/
-.idea/**/dataSources.ids
-.idea/**/dataSources.local.xml
-.idea/**/sqlDataSources.xml
-.idea/**/dynamic.xml
-.idea/**/uiDesigner.xml
-.idea/**/dbnavigator.xml
-.idea/**/gradle.xml
-.idea/**/libraries
-cmake-build-*/
-.idea/**/mongoSettings.xml
-*.iws
-out/
-.idea_modules/
-atlassian-ide-plugin.xml
-.idea/replstate.xml
-.idea/sonarlint/
-com_crashlytics_export_strings.xml
-crashlytics.properties
-crashlytics-build.properties
-fabric.properties
-.idea/httpRequests
-.idea/caches/build_file_checksums.ser
-.gradle
-**/build/
-!src/**/build/
-gradle-app.setting
-!gradle-wrapper.jar
-!gradle-wrapper.properties
-.gradletasknamecache
+!src/**/
+!versions/**/src/**/
+
+# Gradle build files
+/.gradle/
+/build/
+/out/
+
+versions/**/.gradle/
+versions/**/build/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Eclipse
 .project
 .classpath
+.settings/
+
+# VS Code
+.vscode/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Minecraft run
+/run/
+/versions/**/run/
+
+# Fabric and Loom
+/.fabric/
+/.loom/
+versions/**/.loom/
+
+# Libraries
+/libs/
+versions/**/libs/
+
+# User environment
+*.swp
+*.swo
+
+# Java class files
+*.class
+
+# Kotlin
+*.kotlin_module
+.kotlin/
+
+# Include gradle wrapper files
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+/bin/
+/versions/**/bin/

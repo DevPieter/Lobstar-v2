@@ -36,9 +36,9 @@ public class VersionManager {
                 return;
             }
 
-            this.apiVersion = response.api();
-            this.pluginVersion = response.requester();
-            this.compatible = response.compatible();
+            this.apiVersion = response.getApi();
+            this.pluginVersion = response.getRequester();
+            this.compatible = response.getCompatible();
 
             this.successfullyLoaded = true;
             callback.accept(null);

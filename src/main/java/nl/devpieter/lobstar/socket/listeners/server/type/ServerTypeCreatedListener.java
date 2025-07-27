@@ -1,9 +1,7 @@
 package nl.devpieter.lobstar.socket.listeners.server.type;
 
 import com.microsoft.signalr.Action2;
-import nl.devpieter.lobstar.models.server.Server;
-import nl.devpieter.lobstar.models.server.type.ServerType;
-import nl.devpieter.lobstar.socket.events.server.ServerCreatedEvent;
+import nl.devpieter.lobstar.models.serverType.ServerType;
 import nl.devpieter.lobstar.socket.events.server.type.ServerTypeCreatedEvent;
 import nl.devpieter.lobstar.socket.listeners.ISocketListener;
 import nl.devpieter.sees.Sees;

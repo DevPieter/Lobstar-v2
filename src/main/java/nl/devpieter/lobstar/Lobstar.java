@@ -79,11 +79,11 @@ public class Lobstar {
                 return;
             }
 
-            this.logger.info("> API Version: {} ({})", apiVersion.current(), apiVersion.latest());
-            this.logger.info("> Plugin Version: {} ({})", pluginVersion.current(), pluginVersion.latest());
+            this.logger.info("> API Version: {} ({})", apiVersion.getCurrent(), apiVersion.getLatest());
+            this.logger.info("> Plugin Version: {} ({})", pluginVersion.getCurrent(), pluginVersion.getLatest());
 
-            if (apiVersion.updateAvailable()) this.logger.warn("API update available ({} -> {}), please update to the latest version", apiVersion.current(), apiVersion.latest());
-            if (pluginVersion.updateAvailable()) this.logger.warn("Plugin update available ({} -> {}), please update to the latest version", pluginVersion.current(), pluginVersion.latest());
+            if (apiVersion.getUpdateAvailable()) this.logger.warn("API update available ({} -> {}), please update to the latest version", apiVersion.getCurrent(), apiVersion.getLatest());
+            if (pluginVersion.getUpdateAvailable()) this.logger.warn("Plugin update available ({} -> {}), please update to the latest version", pluginVersion.getCurrent(), pluginVersion.getLatest());
 
             if (compatible) {
                 this.logger.info("Plugin and API are compatible, continuing...");
