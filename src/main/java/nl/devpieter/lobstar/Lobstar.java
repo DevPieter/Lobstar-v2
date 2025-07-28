@@ -38,6 +38,10 @@ import nl.devpieter.lobstar.socket.listeners.virtualHost.SyncVirtualHostsListene
 import nl.devpieter.lobstar.socket.listeners.virtualHost.VirtualHostCreatedListener;
 import nl.devpieter.lobstar.socket.listeners.virtualHost.VirtualHostDeletedListener;
 import nl.devpieter.lobstar.socket.listeners.virtualHost.VirtualHostUpdatedListener;
+import nl.devpieter.lobstar.socket.listeners.whitelist.SyncWhitelistEntriesListener;
+import nl.devpieter.lobstar.socket.listeners.whitelist.WhitelistEntryCreatedListener;
+import nl.devpieter.lobstar.socket.listeners.whitelist.WhitelistEntryDeletedListener;
+import nl.devpieter.lobstar.socket.listeners.whitelist.WhitelistEntryUpdatedListener;
 import nl.devpieter.sees.Sees;
 import org.slf4j.Logger;
 
@@ -82,8 +86,10 @@ public class Lobstar {
             this.logger.info("> API Version: {} ({})", apiVersion.getCurrent(), apiVersion.getLatest());
             this.logger.info("> Plugin Version: {} ({})", pluginVersion.getCurrent(), pluginVersion.getLatest());
 
-            if (apiVersion.getUpdateAvailable()) this.logger.warn("API update available ({} -> {}), please update to the latest version", apiVersion.getCurrent(), apiVersion.getLatest());
-            if (pluginVersion.getUpdateAvailable()) this.logger.warn("Plugin update available ({} -> {}), please update to the latest version", pluginVersion.getCurrent(), pluginVersion.getLatest());
+            if (apiVersion.getUpdateAvailable())
+                this.logger.warn("API update available ({} -> {}), please update to the latest version", apiVersion.getCurrent(), apiVersion.getLatest());
+            if (pluginVersion.getUpdateAvailable())
+                this.logger.warn("Plugin update available ({} -> {}), please update to the latest version", pluginVersion.getCurrent(), pluginVersion.getLatest());
 
             if (compatible) {
                 this.logger.info("Plugin and API are compatible, continuing...");
@@ -118,7 +124,6 @@ public class Lobstar {
 
         this.logger.info("<Init> Initializing socket manager");
         SocketManager socketManager = SocketManager.getInstance();
-        sees.subscribe(socketManager);
 
         socketManager.addListener(new SyncMotdsListener());
         socketManager.addListener(new MotdCreatedListener());
@@ -145,31 +150,20 @@ public class Lobstar {
         socketManager.addListener(new VirtualHostUpdatedListener());
         socketManager.addListener(new VirtualHostDeletedListener());
 
-        this.logger.info("<Init> Initializing Message of the Day (MOTD) manager");
-        MotdManager motdManager = MotdManager.getInstance();
-        sees.subscribe(motdManager);
-
-        this.logger.info("<Init> Initializing server type manager");
-        ServerTypeManager serverTypeManager = ServerTypeManager.getInstance();
-        sees.subscribe(serverTypeManager);
-
-        this.logger.info("<Init> Initializing server manager");
-        ServerManager serverManager = ServerManager.getInstance();
-        sees.subscribe(serverManager);
-
-        this.logger.info("<Init> Initializing virtual host manager");
-        VirtualHostManager virtualHostManager = VirtualHostManager.getInstance();
-        sees.subscribe(virtualHostManager);
-
-        this.logger.info("<Init> Initializing whitelist manager");
-        WhitelistManager whitelistManager = WhitelistManager.getInstance();
-        sees.subscribe(whitelistManager);
-
-        this.logger.info("<Init> Initializing status manager");
-        StatusManager statusManager = StatusManager.getInstance();
-        sees.subscribe(statusManager);
+        socketManager.addListener(new SyncWhitelistEntriesListener());
+        socketManager.addListener(new WhitelistEntryCreatedListener());
+        socketManager.addListener(new WhitelistEntryUpdatedListener());
+        socketManager.addListener(new WhitelistEntryDeletedListener());
 
         this.logger.info("<Init> Registering Sees listeners");
+        sees.subscribe(socketManager);
+        sees.subscribe(MotdManager.getInstance());
+        sees.subscribe(ServerTypeManager.getInstance());
+        sees.subscribe(ServerManager.getInstance());
+        sees.subscribe(VirtualHostManager.getInstance());
+        sees.subscribe(WhitelistManager.getInstance());
+        sees.subscribe(StatusManager.getInstance());
+
         sees.subscribe(new PlayerKickListener());
         sees.subscribe(new PlayerMoveListener());
 
@@ -183,10 +177,10 @@ public class Lobstar {
         CommandManager commandManager = this.proxy.getCommandManager();
         commandManager.register(commandManager.metaBuilder("lobby").aliases("hub", "l").plugin(this).build(), new LobbyCommand().lobbyCommand);
 
-        this.logger.info("<Init> Connecting to socket");
+        this.logger.info("<Init> Connecting to socket. This may take a second...");
         socketManager.connect().subscribe(() -> {
             this.logger.info("<Init> Connected to socket, starting sync task");
-            statusManager.startSyncTask();
+            StatusManager.getInstance().startSyncTask();
         }, throwable -> {
             this.logger.error("<Init> Failed to connect to socket");
         });

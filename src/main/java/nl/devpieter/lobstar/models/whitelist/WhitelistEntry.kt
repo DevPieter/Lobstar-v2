@@ -2,7 +2,6 @@ package nl.devpieter.lobstar.models.whitelist;
 
 import java.util.*
 
-
 data class WhitelistEntry(
     val id: UUID,
 
@@ -14,5 +13,5 @@ data class WhitelistEntry(
     var isSuperEntry: Boolean,
 
     var hasExpiration: Boolean,
-    var expirationDate: String? = null
+    var expirationDate: Date?
 )

@@ -61,9 +61,6 @@ public class VirtualHostManager implements Listener {
         this.logger.info("[VirtualHostManager] <Sync> Syncing virtual hosts");
         this.virtualHosts.clear();
 
-//        List<VirtualHost> enabledVirtualHosts = event.virtualHosts().stream().filter(VirtualHost::isEnabled).toList();
-//        this.virtualHosts.addAll(enabledVirtualHosts);
-
         List<VirtualHost> virtualHosts = event.virtualHosts();
         this.virtualHosts.addAll(virtualHosts);
 
@@ -77,11 +74,6 @@ public class VirtualHostManager implements Listener {
 
         if (existingId != null) {
             this.logger.warn("[VirtualHostManager] <Create> Tried to create virtual host {}, but a virtual host with the same ID already exists!", created.getHostname());
-            return;
-        }
-
-        if (!created.isEnabled()) {
-            this.logger.info("[VirtualHostManager] <Create> Tried to create virtual host {}, but it is not enabled, skipping.", created.getHostname());
             return;
         }
 
