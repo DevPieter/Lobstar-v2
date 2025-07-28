@@ -59,7 +59,7 @@ We are working on a full setup guide including Docker Compose templates and usag
 
 <img src="https://github.com/DevPieter/Lobstar-v2/blob/main/docs/images/virtual-host-1.png?raw=true" width="1920" height="917"></img>
 
-<img src="https://github.com/DevPieter/Lobstar-v2/blob/main/docs/images/virtual-host-1.png?raw=true" width="512" height="538"></img>
+<img src="https://github.com/DevPieter/Lobstar-v2/blob/main/docs/images/virtual-host-2.png?raw=true" width="512" height="538"></img>
 
 ## Roadmap
 
