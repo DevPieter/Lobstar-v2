@@ -7,7 +7,6 @@ import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import nl.devpieter.lobstar.Lobstar;
 import nl.devpieter.lobstar.managers.ServerManager;
 import nl.devpieter.lobstar.managers.StatusManager;
 import nl.devpieter.lobstar.models.player.CreatePlayer;
@@ -16,7 +15,6 @@ import nl.devpieter.lobstar.socket.SocketManager;
 
 public class ConnectionListener {
 
-    private final Lobstar lobstar = Lobstar.getInstance();
     private final SocketManager socketManager = SocketManager.getInstance();
     private final ServerManager serverManager = ServerManager.getInstance();
     private final StatusManager statusManager = StatusManager.getInstance();

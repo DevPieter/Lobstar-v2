@@ -77,6 +77,7 @@ public class ServerHelper {
             RegisteredServer registeredServer = server.findRegisteredServer();
             if (registeredServer == null || !ServerUtils.isOnline(registeredServer)) continue;
 
+            if (!this.whitelistHelper.canJoinServer(player, server)) continue;
             return server;
         }
 

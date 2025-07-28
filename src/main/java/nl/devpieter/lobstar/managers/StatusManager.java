@@ -57,7 +57,8 @@ public class StatusManager implements Listener {
 
         this.syncTask = this.proxy.getScheduler().buildTask(this.lobstar, () -> {
             this.syncServerStatuses().thenCompose(unused -> this.syncPlayerStatuses()).whenComplete((unused, throwable) -> {
-                if (throwable != null) this.logger.error("[StatusManager] <Sync> Failed to refresh statuses", throwable);
+                if (throwable != null)
+                    this.logger.error("[StatusManager] <Sync> Failed to refresh statuses", throwable);
             });
         }).repeat(Duration.ofMinutes(5)).delay(Duration.ofMinutes(1)).schedule();
     }
