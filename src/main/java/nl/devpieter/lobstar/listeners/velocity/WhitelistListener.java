@@ -142,9 +142,9 @@ public class WhitelistListener {
             this.logger.info("<Server> {} tried to join {} but the server is under maintenance", player.getUsername(), server.getName());
 
             String message = server.getMaintenanceMessage();
-            if (message == null || message.isEmpty()) message = "Server is currently under maintenance, please try again later!";
+            if (message == null || message.isEmpty()) message = "<#fe3f3f>Server is currently under maintenance, please try again later!";
 
-            PlayerUtils.sendErrorMessage(player, message);
+            PlayerUtils.sendMiniMessage(player, message);
             event.setResult(ServerPreConnectEvent.ServerResult.denied());
             return;
         }

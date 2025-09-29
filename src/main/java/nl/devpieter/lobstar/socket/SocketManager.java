@@ -50,7 +50,7 @@ public class SocketManager implements Listener {
         this.disconnecting = false;
         this.reconnecting = false;
 
-        HttpHubConnectionBuilder builder = HubConnectionBuilder.create(this.configManager.getString("api_base_url") + "/hub/plugin");
+        HttpHubConnectionBuilder builder = HubConnectionBuilder.create(this.configManager.getString("api_base_url") + "/api/hub/plugin");
         builder.withHeader("X-API-KEY", this.configManager.getString("api_key"));
 
         this.hubConnection = builder.build();
