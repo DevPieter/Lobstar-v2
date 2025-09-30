@@ -97,7 +97,12 @@ public class ServerHelper {
         InetSocketAddress requestedAddress = player.getVirtualHost().orElse(null);
         if (requestedAddress == null) return null;
 
-        String requestedHost = requestedAddress.getHostString(); // TODO - Add more validation
+        String hostString = requestedAddress.getHostString();
+        if (hostString == null || hostString.isEmpty()) return null;
+
+        String requestedHost = hostString.replaceAll("[^a-zA-Z0-9-._]", "");
+        if (requestedHost.isEmpty()) return null;
+
         VirtualHost virtualHost = this.virtualHostManager.findMatchingVirtualHost(requestedHost, false);
         if (virtualHost == null) return null;
 

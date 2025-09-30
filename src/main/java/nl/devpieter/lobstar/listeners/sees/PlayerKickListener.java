@@ -48,7 +48,6 @@ public class PlayerKickListener implements Listener {
     }
 
     private void kickAllPlayers(@Nullable String reason, boolean toLobby) {
-        // TODO - Check if getAllPlayers is the right method to use (read doc)
         for (Player player : this.proxy.getAllPlayers()) {
             this.kickPlayer(player, reason, toLobby);
         }
