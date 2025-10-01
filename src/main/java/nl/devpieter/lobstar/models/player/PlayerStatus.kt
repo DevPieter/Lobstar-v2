@@ -12,6 +12,9 @@ data class PlayerStatus(
     val address: String,
     val port: Int,
 
+    val requestedVirtualHost: String?,
+    val matchingVirtualHostId: UUID?,
+
     val currentServerId: UUID,
     val version: MinecraftVersion
 )

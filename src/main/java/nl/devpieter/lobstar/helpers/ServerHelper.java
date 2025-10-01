@@ -10,6 +10,7 @@ import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.models.serverType.ServerType;
 import nl.devpieter.lobstar.models.virtualHost.VirtualHost;
 import nl.devpieter.lobstar.utils.ServerUtils;
+import nl.devpieter.lobstar.utils.VirtualHostUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -94,14 +95,8 @@ public class ServerHelper {
 
     // TODO - Add proper logging
     public @Nullable Server tryGetPlayerRequestedServer(@NotNull Player player) {
-        InetSocketAddress requestedAddress = player.getVirtualHost().orElse(null);
-        if (requestedAddress == null) return null;
-
-        String hostString = requestedAddress.getHostString();
-        if (hostString == null || hostString.isEmpty()) return null;
-
-        String requestedHost = hostString.replaceAll("[^a-zA-Z0-9-._]", "");
-        if (requestedHost.isEmpty()) return null;
+        String requestedHost = VirtualHostUtils.getVirtualHost(player);
+        if (requestedHost == null || requestedHost.isEmpty()) return null;
 
         VirtualHost virtualHost = this.virtualHostManager.findMatchingVirtualHost(requestedHost, false);
         if (virtualHost == null) return null;

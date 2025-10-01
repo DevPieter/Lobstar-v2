@@ -15,8 +15,10 @@ import nl.devpieter.lobstar.models.common.MinecraftVersion;
 import nl.devpieter.lobstar.models.player.PlayerStatus;
 import nl.devpieter.lobstar.models.server.Server;
 import nl.devpieter.lobstar.models.server.ServerStatus;
+import nl.devpieter.lobstar.models.virtualHost.VirtualHost;
 import nl.devpieter.lobstar.socket.SocketManager;
 import nl.devpieter.lobstar.utils.ServerUtils;
+import nl.devpieter.lobstar.utils.VirtualHostUtils;
 import nl.devpieter.sees.Annotations.EventListener;
 import nl.devpieter.sees.Listener.Listener;
 import org.jetbrains.annotations.NotNull;
@@ -35,6 +37,7 @@ public class StatusManager implements Listener {
     private final Lobstar lobstar = Lobstar.getInstance();
     private final SocketManager socketManager = SocketManager.getInstance();
     private final ServerManager serverManager = ServerManager.getInstance();
+    private final VirtualHostManager virtualHostManager = VirtualHostManager.getInstance();
 
     private final ProxyServer proxy = this.lobstar.getProxy();
     private final Logger logger = this.lobstar.getLogger();
@@ -94,7 +97,9 @@ public class StatusManager implements Listener {
         if (server == null) return this.clearPlayerStatus(player);
 
         InetSocketAddress socketAddress = player.getRemoteAddress();
-        InetSocketAddress virtualHost = player.getVirtualHost().orElse(null); // TODO - Send virtual host?
+
+        String requestedHost = VirtualHostUtils.getVirtualHost(player);
+        VirtualHost matchingHost = requestedHost != null ? this.virtualHostManager.findMatchingVirtualHost(requestedHost, false) : null;
 
         this.socketManager.send("UpdatePlayerStatus", player.getUniqueId(), new PlayerStatus(
                 player.getUsername(),
@@ -104,6 +109,9 @@ public class StatusManager implements Listener {
 
                 socketAddress.getAddress().getHostAddress(),
                 socketAddress.getPort(),
+
+                requestedHost,
+                matchingHost != null ? matchingHost.getId() : null,
 
                 server.getId(),
                 MinecraftVersion.of(player.getProtocolVersion())
