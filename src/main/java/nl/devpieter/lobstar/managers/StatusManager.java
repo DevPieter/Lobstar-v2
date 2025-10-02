@@ -116,6 +116,7 @@ public class StatusManager implements Listener {
                 server.getId(),
                 MinecraftVersion.of(player.getProtocolVersion())
         ));
+
         return CompletableFuture.completedFuture(null);
     }
 
@@ -140,6 +141,7 @@ public class StatusManager implements Listener {
 
                 version
         ));
+
         return CompletableFuture.completedFuture(null);
     }
 

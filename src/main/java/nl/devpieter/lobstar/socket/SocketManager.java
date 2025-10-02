@@ -4,12 +4,16 @@ import com.microsoft.signalr.*;
 import io.reactivex.rxjava3.core.Completable;
 import nl.devpieter.lobstar.ConfigManager;
 import nl.devpieter.lobstar.Lobstar;
+import nl.devpieter.lobstar.managers.RetryManager;
+import nl.devpieter.lobstar.models.common.Retry;
+import nl.devpieter.lobstar.models.common.RetryHolder;
 import nl.devpieter.lobstar.socket.listeners.ISocketListener;
 import nl.devpieter.lobstar.socket.utils.CastUtils;
 import nl.devpieter.sees.Listener.Listener;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Type;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +26,7 @@ public class SocketManager implements Listener {
     private static SocketManager INSTANCE;
 
     private final ConfigManager configManager = ConfigManager.getInstance();
+    private final RetryManager retryManager = RetryManager.getInstance();
     private final Logger logger = Lobstar.getInstance().getLogger();
 
     private final List<ISocketListener<?>> socketListeners = new ArrayList<>();
@@ -29,6 +34,12 @@ public class SocketManager implements Listener {
     private HubConnection hubConnection;
     private boolean disconnecting;
     private boolean reconnecting;
+
+    private final RetryHolder reconnectRetry = retryManager.register("socket-reconnect", new Retry(
+            Duration.ofSeconds(2),
+            Duration.ofSeconds(30),
+            1.5
+    ), this::attemptReconnect);
 
     private SocketManager() {
     }
@@ -39,7 +50,8 @@ public class SocketManager implements Listener {
     }
 
     public void addListener(ISocketListener<?> listener) {
-        if (this.isConnected() || this.isConnecting()) throw new IllegalStateException("Cannot add listener while connected or connecting");
+        if (this.isConnected() || this.isConnecting())
+            throw new IllegalStateException("Cannot add listener while connected or connecting");
         this.socketListeners.add(listener);
     }
 
@@ -80,22 +92,25 @@ public class SocketManager implements Listener {
 
         this.hubConnection.onClosed(exception -> {
             if (this.disconnecting || this.reconnecting) return;
-            this.logger.error("Socket connection closed, reconnecting in 10 seconds");
+            this.logger.error("Disconnected from socket, attempting to reconnect in a bit", exception);
 
             this.reconnecting = true;
-            this.attemptReconnect();
+            this.retryManager.retry(this.reconnectRetry);
         });
 
         return hubConnection.start();
     }
 
     private void attemptReconnect() {
-        Completable.timer(10, TimeUnit.SECONDS)
-                .andThen(this.connect())
-                .subscribe(() -> this.reconnecting = false, throwable -> {
-                    this.logger.error("Failed to reconnect to socket, retrying in 10 seconds");
-                    this.attemptReconnect();
-                });
+        this.reconnecting = true;
+        this.connect().subscribe(() -> {
+            this.logger.info("Reconnected to socket");
+            this.reconnecting = false;
+            this.reconnectRetry.retry().reset();
+        }, throwable -> {
+            this.logger.error("Failed to reconnect to socket, will try again");
+            this.retryManager.retry(this.reconnectRetry);
+        });
     }
 
     public Completable disconnect() {

@@ -10,7 +10,7 @@ group = 'nl.devpieter'
 version = '2.0.0'
 
 jar {
-    destinationDirectory = file("C:\\Users\\devpi\\Desktop\\test_server\\Velocity Lobbies Setup\\velocity\\plugins")
+    destinationDirectory = file("C:\\Users\\devpi\\Desktop\\Test server\\proxy\\plugins")
 }
 
 repositories {
@@ -71,7 +71,7 @@ project.eclipse.synchronizationTasks(generateTemplates)
 
 shadowJar {
     archiveClassifier.set('')
-    destinationDirectory = file("C:\\Users\\devpi\\Desktop\\test_server\\Velocity Lobbies Setup\\velocity\\plugins")
+    destinationDirectory = file("C:\\Users\\devpi\\Desktop\\Test server\\proxy\\plugins")
 }
 
 build.dependsOn shadowJar
