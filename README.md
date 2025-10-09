@@ -6,11 +6,10 @@
 ## Overview
 
 **Lobstar** is an advanced whitelisting and connection management system for Minecraft networks using the **Velocity**
-proxy. It provides a modern, easy-to-use web dashboard that empowers server admins to manage players, servers,
+proxy. It provides a modern, easy-to-use web dashboard that helps server admins to manage players, servers,
 whitelists, and virtual hosts with ease.
 
-Whether you're running a large network or a small private setup, Lobstar offers powerful tools to keep your server
-infrastructure organized and secure.
+Whether you're running a large network or a small private setup, Lobstar aims to simplify server and player management.
 
 ## Features
 
@@ -20,21 +19,28 @@ infrastructure organized and secure.
 
 ## Installation
 
-Lobstar is a multi-component system, requiring several services to run.
+Lobstar is a multi-component system, requiring several services to run. Below are the main components and their requirements. Lobstar is designed to be deployed using Docker Compose for ease of deployment.
 
 ### Requirements
 
+- (Recommended) Linux-based server with at least 1GB[^1] of RAM
 - [Docker & Docker Compose](https://docs.docker.com/compose/)
 - [Velocity Proxy](https://velocitypowered.com/)
-- (Recommended) Linux or Unix-based system
+
+[^1]: The memory requirement may vary based on the size of your server network, number of players, and the state of the project.
 
 ### Components
 
-- [**Lobstar API**](https://github.com/DevPieter/lobstar_api)
-- [**Lobstar Panel (Web Dashboard)**](https://github.com/DevPieter/lobstar_panel)
-- [**Velocity Plugin**](https://github.com/DevPieter/Lobstar-v2)
-- **PostgreSQL** – Core database
-- **Redis** *(planned)* – For caching and messaging
+- **Lobstar Server** ([API](https://github.com/DevPieter/lobstar_api) & [Panel](https://github.com/DevPieter/lobstar_panel))
+    - The Lobstar Server combines the backend API and web dashboard for easier deployment.
+    - It handles all core logic, manages Velocity interactions, and serves the web interface.
+- **Velocity Plugin** ([Plugin](https://github.com/DevPieter/Lobstar-v2))
+    - The plugin handles communication between the Velocity proxy and the Lobstar API.
+    - It manages player connections, whitelisting, server routing, and other related features.
+- **PostgreSQL**
+    - Stores all persistent data.
+- **Redis**
+    - Used primarily for caching server and player states to reduce database load and improve performance.
 
 ### Setup Guide
 
@@ -67,7 +73,7 @@ We are working on a full setup guide including Docker Compose templates and usag
 - ✅ Dynamic server registration
 - ✅ Virtual host routing
 - ✅ Web dashboard integration
-- 🔄 Redis-based caching and messaging
-- 🔄 Admin roles and permissions
-- 🔄 Public API documentation
+- ✅ Redis-based caching
+- ✅ Admin roles and permissions
+- 🔄 API documentation
 - 🔄 Metrics and alerts
